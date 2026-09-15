@@ -1,0 +1,28 @@
+name: "♻️ Refactor"
+description: "동작 변경 없는 코드 구조 개선"
+labels: ["refactor"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 설명
+      description: 어떤 부분을 어떻게 개선할 것인지 작성해 주세요.
+      placeholder: 대상 파일이나 함수를 함께 적어주세요!
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🤔 개선이 필요한 이유
+      description: 현재 구조의 문제점을 작성해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 작업할 내용
+      description: 할 일을 체크박스 형태로 작성해주세요.
+      placeholder: 최대한 세분화 해서 적어주세요!
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 자료
+      description: 참고 자료가 있다면 작성해 주세요.

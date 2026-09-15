@@ -1,0 +1,35 @@
+name: "🐞 Bug"
+description: "버그 및 오류 제보"
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 설명
+      description: 어떤 문제가 발생했는지 작성해 주세요.
+      placeholder: 어디서, 무엇이, 어떻게 잘못됐는지 적어주세요!
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🔁 재현 방법
+      description: 문제를 다시 발생시키는 순서를 작성해 주세요.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🎯 기대한 동작
+      description: 원래 어떻게 동작해야 하는지 작성해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🖥️ 로그 및 환경
+      description: 에러 로그, 실행 환경, 커밋 해시 등을 작성해 주세요.
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 자료
+      description: 참고 자료가 있다면 작성해 주세요.

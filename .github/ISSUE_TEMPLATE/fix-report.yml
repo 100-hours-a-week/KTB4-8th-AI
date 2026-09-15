@@ -1,0 +1,26 @@
+name: "🔧 Fix"
+description: "버그 수정 작업"
+labels: ["fix"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 설명
+      description: 무엇을 수정할 것인지 작성해 주세요.
+      placeholder: 관련된 버그 이슈가 있다면 번호를 함께 적어주세요!
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🔍 원인
+      description: 문제의 원인을 파악했다면 작성해 주세요.
+  - type: textarea
+    attributes:
+      label: ✅ 작업할 내용
+      description: 할 일을 체크박스 형태로 작성해주세요.
+      placeholder: 최대한 세분화 해서 적어주세요!
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 자료
+      description: 참고 자료가 있다면 작성해 주세요.
