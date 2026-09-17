@@ -1,0 +1,381 @@
+
+# TODO(Cloud/CD): 이 파일은 최종 운영 토폴로지 초안이다.
+# 각 Repository의 Image, AWS IAM, Log Group, TLS, Secret 연동이 준비된 뒤
+# Cloud Repository의 CD Workflow에서 사용한다.
+name: keepgo-v1
+
+services:
+
+  # ========================================================
+  # Web
+  # ========================================================
+  web:
+    # t3.medium(x86_64) 기준, 변경시 수정
+    platform: linux/amd64
+
+    image: >-
+      ${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID is required}.dkr.ecr.ap-northeast-2.amazonaws.com/keepgo-web:${WEB_IMAGE_TAG:?WEB_IMAGE_TAG is required}
+
+    init: true
+    restart: unless-stopped
+
+    security_opt:
+      - no-new-privileges:true
+
+    # 외부 공개 Port
+    ports:
+      - "80:80"
+      - "443:443"
+
+    networks:
+      - web
+
+    volumes:
+      # TODO: TLS 인증서 발급/갱신 방식 및 Host 경로 확정
+      - /opt/keepgo/tls:/etc/nginx/tls:ro
+
+    mem_limit: 128m  # [임의값]
+
+    stop_grace_period: 10s
+
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-create-group: "false"
+        awslogs-group: /keepgo/v1/web
+        awslogs-stream: "web-${WEB_IMAGE_TAG:?WEB_IMAGE_TAG is required}"
+        mode: non-blocking
+        max-buffer-size: 4m  # [임의값]
+
+    # TODO:
+    # Web Image에 사용할 수 있는 Health Check 도구를 확정한 뒤 추가
+    #
+    # 예:
+    # /healthz Endpoint + curl 또는 wget
+    #
+    # 현재 Image에 wget/curl 존재 여부가 확정되지 않음
+
+
+  # ========================================================
+  # Backend API
+  # 사용자 요청 및 주요 Application API 처리
+  #
+  # 외부에서 직접 접근하지 않고 Web(Nginx)을 통해서만 접근
+  # ========================================================
+  backend:
+    platform: linux/amd64
+
+    image: >-
+      ${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID is required}.dkr.ecr.ap-northeast-2.amazonaws.com/keepgo-backend:${BACKEND_IMAGE_TAG:?BACKEND_IMAGE_TAG is required}
+
+    init: true
+    restart: unless-stopped
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Host Port에는 Publish하지 않는다.
+    # Docker Network 내부에서 Web이 backend:8080으로 접근한다.
+    expose:
+      - "8080"
+
+    networks:
+      - web
+      - service
+
+    # Backend 자체는 AI API 기동 여부와 독립적으로 실행
+
+    environment:
+      # Spring 프로필 이름은 prod로 통일됨.
+      # TODO(Backend): application-prod.yaml을 추가한 뒤 활성화
+      # SPRING_PROFILES_ACTIVE: prod
+
+      # TODO(Secrets Manager): Backend에 AWS SDK 또는 Spring Cloud AWS 연동을
+      # 구현한 뒤 Region과 Secret ID를 활성화한다.
+      # AWS_REGION: ap-northeast-2
+      # AWS_DEFAULT_REGION: ap-northeast-2
+
+      # Secret ID 이름과 값은 팀 공통 규칙으로 확정됨.
+      # 실제 Secret 값은 Env에 직접 넣지 않는다.
+      # Application은 DB_SECRET_ID를 통해 조회할 Secret 이름을 확인하고,
+      # AWS SDK와 EC2 IAM Role을 이용해 Secrets Manager에서 실행 시점에 실제 Secret 값을 조회한다.
+      # DB_SECRET_ID: keepgo/prod/database
+      # GOOGLE_OAUTH_SECRET_ID: keepgo/prod/google-oauth
+      # JWT_SECRET_ID: keepgo/prod/jwt
+      # MAPS_SECRET_ID: keepgo/prod/maps
+
+      # TODO(Backend): AI API Client 구현 후 활성화
+      # AI_API_BASE_URL: http://ai-api:8000
+
+      # [임의값]
+      # Container Memory 중 JVM Heap이 사용할 최대 비율, 여유 확보
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65.0"
+
+      # Spring Boot Graceful Shutdown
+      SERVER_SHUTDOWN: graceful
+
+      # spring.lifecycle.timeout-per-shutdown-phase
+      # stop_grace_period(30s)보다 짧게 설정
+      SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 20s
+
+      # spring.datasource.hikari.maximum-pool-size
+      #
+      # [임의값]
+      # Backend + Worker 전체 Connection 수를 고려하여
+      # 초기에는 작은 Pool부터 시작
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
+
+      # TODO(Backend): spring-boot-starter-actuator 의존성과
+      # readiness Health Group을 구현한 뒤 활성화
+      # MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+
+      # Backend Process와 DB가 모두 정상이어야 Readiness UP
+      # MANAGEMENT_ENDPOINT_HEALTH_GROUP_READINESS_INCLUDE: "readinessState,db"
+
+      # TODO:
+      # JPA 사용 및 DB Schema 관리 정책 확정 후 검토
+      #
+      # SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+
+    mem_limit: 1280m  # [임의값]
+
+    stop_grace_period: 30s
+
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-create-group: "false"
+        awslogs-group: /keepgo/v1/backend
+        awslogs-stream: "backend-${BACKEND_IMAGE_TAG:?BACKEND_IMAGE_TAG is required}"
+        mode: non-blocking
+        max-buffer-size: 4m  # [임의값]
+
+    # TODO:
+    # Backend Runtime Image에 curl/wget 등이 존재하지 않으므로
+    # 현재는 Compose Health Check를 강제하지 않는다.
+    #
+    # Actuator + Health Check 도구가 Dockerfile에 확정되면
+    #
+    # /actuator/health/readiness
+    #
+    # 를 대상으로 Health Check 추가
+
+
+  # ========================================================
+  # Worker
+  #
+  # YouTube Sync 및 비동기 분석 Job 처리
+  #
+  # Backend와 코드/Dependency가 다른 별도 Application이므로
+  # 별도 Docker Image로 배포한다.
+  # ========================================================
+  worker:
+    # TODO(Worker): 별도 Worker Repository의 Image와 실행 설정이 완성된 뒤
+    # 운영 Compose 실행 대상에 포함한다.
+    platform: linux/amd64
+
+    image: >-
+      ${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID is required}.dkr.ecr.ap-northeast-2.amazonaws.com/keepgo-worker:${WORKER_IMAGE_TAG:?WORKER_IMAGE_TAG is required}
+
+    # TODO:
+    # Worker Repository의 Dockerfile / ENTRYPOINT 확정 후
+    # 별도의 command가 필요한지 확인
+
+    init: true
+    restart: unless-stopped
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Worker는 외부 요청을 받지 않으므로 Port 공개 없음
+    networks:
+      - service
+
+    # Worker는 Backend API에 의존하지 않는다.
+    #
+    # DB에서 Job을 직접 조회하고 AI API를 호출하는 구조이므로
+    # Backend 장애가 Worker 시작을 막지 않도록 분리한다.
+    #
+    # TODO(AI): GET /health 구현 후 아래 의존 조건을 활성화한다.
+    # AI 분석 요청이 필요하므로 AI API가 Healthy 상태가 된 후 시작한다.
+    # depends_on:
+    #   ai-api:
+    #     condition: service_healthy
+
+    environment:
+      # Worker Spring 프로필은 worker로 통일
+      SPRING_PROFILES_ACTIVE: worker
+
+      AWS_REGION: ap-northeast-2
+      AWS_DEFAULT_REGION: ap-northeast-2
+
+      # 팀 공통 Secret ID
+      DB_SECRET_ID: keepgo/prod/database
+
+      # YouTube Sync용 팀 공통 Secret ID
+      GOOGLE_OAUTH_SECRET_ID: keepgo/prod/google-oauth
+
+      AI_API_BASE_URL: http://ai-api:8000
+
+      # [임의값]
+      # 동시에 처리하는 Job 수
+      # AI API / 외부 API / DB 부하테스트 후 조정
+      WORKER_CONCURRENCY: "1"
+
+      # Worker는 HTTP Server를 실행하지 않음
+      SPRING_MAIN_WEB_APPLICATION_TYPE: none
+
+      # [임의값]
+      # Worker Container가 작으므로 Heap 외 JVM Memory 여유 확보
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60.0"
+
+      # stop_grace_period(60s)보다 짧게 설정하여
+      # Spring이 진행 중 작업을 정리할 시간을 확보
+      SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 50s
+
+      # [임의값]
+      # concurrency=1 기준 작은 Connection Pool부터 시작
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+
+    # Worker가 CPU/Memory를 과도하게 사용하여
+    # 동일 EC2의 Backend API와 자원 경합하는 것을 제한
+    mem_limit: 768m  # [임의값]
+    cpus: "1.0"      # [임의값]
+
+    # 진행 중 Job 종료/상태 정리를 위한 시간 확보
+    stop_grace_period: 60s
+
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-create-group: "false"
+        awslogs-group: /keepgo/v1/worker
+        awslogs-stream: "worker-${WORKER_IMAGE_TAG:?WORKER_IMAGE_TAG is required}"
+        mode: non-blocking
+        max-buffer-size: 4m  # [임의값]
+
+    # TODO:
+    # Worker는 HTTP Server를 사용하지 않으므로
+    # 일반적인 HTTP Health Check 적용이 어렵다.
+    #
+    # 추후 다음 중 하나를 기준으로 운영 상태 확인 방식 확정
+    #
+    # - Process 상태
+    # - Job heartbeat
+    # - 마지막 Job 처리 시각
+    # - 별도 Management Endpoint
+
+
+  # ========================================================
+  # AI API
+  #
+  # Backend / Worker에서만 내부 호출
+  # 외부 Port Publish 없음
+  # ========================================================
+  ai-api:
+    # V1 MVP: Gemini 기반 단일 AI API.
+    # 비동기 작업 상태와 재시도는 Backend Worker가 관리하고,
+    # AI 전용 Worker/Redis Streams는 V1에 두지 않는다.
+    platform: linux/amd64
+
+    image: >-
+      ${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID is required}.dkr.ecr.ap-northeast-2.amazonaws.com/keepgo-ai:${AI_IMAGE_TAG:?AI_IMAGE_TAG is required}
+
+    init: true
+    restart: unless-stopped
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Host에 Publish하지 않고 service Network 내부에서만 사용
+    expose:
+      - "8000"
+
+    networks:
+      - service
+
+    # TODO(AI): core/config.py와 Secrets Manager 조회 코드가 구현되면 활성화한다.
+    # Secret ID 환경변수 이름과 값은 팀 공통 규칙으로 확정됐다.
+    # AI API는 업무 DB에 직접 접근하지 않으므로 DB_SECRET_ID를 사용하지 않는다.
+    # environment:
+    #   AWS_REGION: ap-northeast-2
+    #   AWS_DEFAULT_REGION: ap-northeast-2
+    #   LLM_PROVIDER: google
+    #   GOOGLE_MODEL: gemini-3.5-flash-lite
+    #   EMBEDDING_PROVIDER: google
+    #   EMBEDDING_MODEL: gemini-embedding-001
+    #   MAPS_SECRET_ID: keepgo/prod/maps
+    #   GEMINI_SECRET_ID: keepgo/prod/gemini
+    #   PORT: "8000"
+
+    # TODO(AI/Infra): Chroma 영속 저장 필요 여부와 경로를 확정하고,
+    # Chroma 저장 코드가 구현되면 volume을 활성화한다.
+    # volumes:
+    #   - ai-chroma:/app/data/chroma
+
+    mem_limit: 512m  # [임의값]
+
+    stop_grace_period: 30s
+
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-create-group: "false"
+        awslogs-group: /keepgo/v1/ai-api
+        awslogs-stream: "ai-api-${AI_IMAGE_TAG:?AI_IMAGE_TAG is required}"
+        mode: non-blocking
+        max-buffer-size: 4m  # [임의값]
+
+    # TODO(AI): GET /health 구현 후 아래 healthcheck를 활성화한다.
+    # /health는 Gemini / Maps 등 외부 API까지 호출하지 않고
+    # AI API Process 자체의 정상 상태만 확인한다.
+    #
+    # healthcheck:
+    #   test:
+    #     - CMD
+    #     - python
+    #     - -c
+    #     - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"
+    #   interval: 30s      # [임의값]
+    #   timeout: 5s        # [임의값]
+    #   retries: 3         # [임의값]
+    #   start_period: 20s  # [임의값]
+
+
+# ==========================================================
+# Network
+# ==========================================================
+networks:
+
+  # 외부 요청 경로
+  #
+  # Internet
+  #   ↓
+  # Web
+  #   ↓
+  # Backend
+  web:
+    name: keepgo-web
+    driver: bridge
+
+  # 내부 Application 통신
+  #
+  # Backend ───────→ AI API
+  # Worker  ───────→ AI API
+  #
+  # Worker는 Backend를 거치지 않고 필요한 서비스에 직접 접근
+  service:
+    name: keepgo-service
+    driver: bridge
+
+
+# ==========================================================
+# Persistent data — Chroma 정책 확정 후 활성화
+# ==========================================================
+# volumes:
+#   ai-chroma:
+#     name: keepgo-ai-chroma
