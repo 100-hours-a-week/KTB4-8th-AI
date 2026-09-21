@@ -1,0 +1,285 @@
+name: AI CI
+
+# ============================================================
+# Trigger 정책
+#
+# 1. feature/** Push
+#    - 개발 중 빠른 피드백을 위한 기본 검증 수행
+#
+# 2. main 대상 Pull Request
+#    - Main Merge 전에 코드 품질 / 테스트 / Docker Image 생성 검증
+#
+# 3. main Push
+#    - 최종 main Commit 기준 Docker Image 생성
+#    - Commit SHA Tag로 ECR에 저장
+#
+# Production EC2 배포는 이 Workflow에서 수행하지 않는다.
+# 실제 운영 배포는 Cloud Repository의 CD에서 수행한다.
+# ============================================================
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - main
+
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+
+# ============================================================
+# 기본 GitHub Token 권한
+#
+# Source Checkout에 필요한 read 권한만 기본으로 부여한다.
+# AWS 접근 권한은 필요한 main-image Job에서만 별도로 추가한다.
+# ============================================================
+
+permissions:
+  contents: read
+
+
+jobs:
+
+  # ============================================================
+  # 1. Feature Branch CI
+  #
+  # 개발자가 feature Branch에서 작업하는 동안
+  # 빠르게 코드 품질과 테스트 실패 여부를 확인한다.
+  #
+  # Docker Image Build는 상대적으로 시간이 오래 걸리므로
+  # Merge 직전인 PR CI에서 수행한다.
+  # ============================================================
+
+  feature-check:
+    name: Feature - Fast Check
+
+    # feature/** Branch Push에서만 실행
+    if: >
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/heads/feature/')
+
+    runs-on: ubuntu-latest
+
+    # 같은 Feature Branch에 여러 Commit이 연속 Push되면
+    # 이전 Commit의 CI를 취소하고 최신 Commit만 검증한다.
+    #
+    # 오래된 CI가 Runner 시간을 계속 사용하는 것을 방지한다.
+    concurrency:
+      group: ai-feature-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+
+      # Repository Source를 GitHub Runner로 가져온다.
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # AI Application과 동일한 Python Version을 CI에서도 사용한다.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # AI Repository의 Dependency Manager인 uv 설치
+      #
+      # TODO:
+      # uv Version을 최종 확정하면 특정 Version으로 고정하여
+      # 개발환경 / CI / Docker Build 환경 차이를 줄인다.
+      - name: Install uv
+        run: pip install uv
+
+      # uv.lock에 고정된 Dependency 설치
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
+      # - name: Ruff lint
+      #   run: uv run ruff check .
+      # - name: Ruff format check
+      #   run: uv run ruff format --check .
+      # - name: Run tests
+      #   run: uv run pytest
+
+
+  # ============================================================
+  # 2. Pull Request CI
+  #
+  # main Merge 전에 반드시 통과해야 하는 Quality Gate.
+  #
+  # Ruff → Pytest → Docker Build 순으로 검
+  #
+  # GitHub Ruleset / Branch Protection에서
+  # ci-gate를 Required Check로 지정한다.
+  # ============================================================
+
+  pr-gate:
+    name: ci-gate
+
+    if: github.event_name == 'pull_request'
+
+    runs-on: ubuntu-latest
+
+    # 동일 PR에 새로운 Commit이 Push되면
+    # 이전 Commit의 CI는 취소하고 최신 Commit을 검증한다.
+    concurrency:
+      group: ai-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+    steps:
+
+      # PR Source Checkout
+      - name: Checkout PR source
+        uses: actions/checkout@v4
+
+      # 실제 AI Application과 동일한 Python Version 사용
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # AI Repository의 Dependency Manager 설치
+      - name: Install uv
+        run: pip install uv
+
+      # Application / Test / Ruff 실행에 필요한 고정 Dependency 설치
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
+      # - name: Ruff lint
+      #   run: uv run ruff check .
+      # - name: Ruff format check
+      #   run: uv run ruff format --check .
+      # - name: Run tests
+      #   run: uv run pytest
+
+      # 실제 AI Dockerfile을 이용해
+      # FastAPI Runtime Image가 정상적으로 생성되는지 확인한다.
+      #
+      # 이 단계에서는 Build만 검증하며 ECR에는 Push하지 않는다.
+      #
+      # 따라서 Dockerfile 오류나 Dependency 설치 실패 등을
+      # Main Merge 전에 발견할 수 있다.
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag keepgo-ai:pr-${{ github.event.pull_request.number }} \
+            .
+
+
+  # ============================================================
+  # 3. Main Branch CI + ECR Push
+  #
+  # Main에 반영된 최종 Commit을 기준으로
+  # 운영 배포 후보 Docker Image를 생성한다.
+  # 여기서는 검증된 Image를 ECR에 저장하는 것까지만 수행한다.
+  # ============================================================
+
+  main-image:
+    name: Main - Build and Push Image
+
+    # main Branch에 Commit이 반영되었을 때만 실행
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    # contents: read
+    #   → Repository Source Checkout
+    #
+    # id-token: write
+    #   → GitHub OIDC Token 발급
+    #
+    # GitHub OIDC 인증 후
+    # ECR Push 권한을 가진 AWS IAM Role의 권한을
+    # Workflow 실행 동안 임시로 사용한다.
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+
+      # ECR Image의 기준이 되는 최종 main Commit Checkout
+      - name: Checkout main commit
+        uses: actions/checkout@v4
+
+      # Application과 동일한 Python Version 사용
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # uv 설치
+      #
+      # TODO:
+      # uv Version 확정 후 특정 Version으로 고정
+      - name: Install uv
+        run: pip install uv
+
+      # uv.lock에 고정된 Dependency 설치
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
+      # - name: Ruff lint
+      #   run: uv run ruff check .
+      # - name: Ruff format check
+      #   run: uv run ruff format --check .
+      # - name: Run tests
+      #   run: uv run pytest
+
+      # GitHub OIDC를 이용해 AWS에 인증한다.
+      # ECR Push 전용 IAM Role의 임시 Credential을 사용
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # 위에서 발급받은 AWS Credential을 이용해
+      # Amazon ECR Registry에 Docker Login한다.
+      #
+      # 출력되는 Registry 주소는 이후 Image URI 생성에 사용한다.
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Docker Image의 전체 URI 생성
+      #
+      # 예:
+      # 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/
+      # keepgo-ai:abc123...
+      #
+      # latest Tag 대신 Full Commit SHA를 사용하여
+      # 어떤 Source Commit에서 생성된 Image인지 추적 가능하게 한다.
+      #
+      # Rollback 시에도 이전 Commit SHA Image를 지정
+      - name: Set image reference
+        shell: bash
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${GITHUB_SHA}"
+          echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
+
+      # 최종 main Commit을 기준으로
+      # 실제 운영에 사용할 AI Docker Image 생성
+      - name: Build Docker image
+        run: docker build --tag "$IMAGE_URI" .
+
+      # 앞선 검증을 통과한 Docker Image를 ECR에 저장
+      #
+      # 여기까지는 운영 Image 후보를 저장만
+      - name: Push image to ECR
+        run: docker push "$IMAGE_URI"
+
+      # CI Log에서 생성된 Image와 Commit SHA를
+      # 쉽게 확인할 수 있도록 출력
+      - name: Show published image
+        run: |
+          echo "Published AI image: $IMAGE_URI"
+          echo "Commit SHA: $GITHUB_SHA"
