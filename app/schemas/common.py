@@ -25,3 +25,6 @@ ResponseMessage = Literal[
 class APIResponse(BaseModel, Generic[T]):
     message: ResponseMessage = Field(description="처리 결과 코드")
     data: T | None = Field(default=None, description="응답 데이터 (실패 시 null)")
+    detail: str | None = Field(
+        default=None, description="에러 상세 메시지 (성공 시 null)"
+    )
