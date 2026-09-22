@@ -29,6 +29,7 @@
 | POST | /v1/verify-place | 장소 존재 여부·영업시간 검증 및 좌표 조회 |
 | POST | /v1/extract | 사용자 발화에서 슬롯·정성 조건 추출 |
 | POST | /v1/recommend-courses | 후보 장소로 코스 조합·방문 순서·도착 시각 생성 |
+| POST | /v1/recommend-courses/{request_id}/cancel | 진행 중인 코스 추천 요청 중단 |
 | POST | /v1/embed-places | 장소 요약을 임베딩해 벡터 DB에 저장 |
 
 > [!NOTE]
@@ -260,6 +261,7 @@ class HistoryPlace(BaseModel):
 
 class RecommendCoursesRequest(BaseModel):
     """코스 추천 요청 모델"""
+    request_id: str = Field(..., description="이 추천 요청의 고유 식별자 (Backend가 생성, 중단 API에서 사용)")
     query: str = Field(..., description="정성 조건")
     candidates: List[RecommendCandidate] = Field(..., max_length=50, description="좌표 반경 1차 필터링을 통과한 후보 목록 (최대 50개)")
     history_place_ids: List[HistoryPlace] = Field(default_factory=list, max_length=50, description="최근 저장한 장소 목록, 취향 벡터 계산용 (최대 50개)")
@@ -524,6 +526,7 @@ AI Server
 요청 예시
 ```json
 {
+  "request_id": "req_c9f1a2",
   "query": "조용한",
   "candidates": [
     {
@@ -616,7 +619,7 @@ AI Server
 
 | Status Code | Message | Description |
 | --- | --- | --- |
-| 200 | analyze_success / verify_success / extract_success / recommend_success / embed_success | 요청 성공 |
+| 200 | analyze_success / verify_success / extract_success / recommend_success / embed_success / cancel_accepted / embed_delete_success | 요청 성공 |
 | 400 | invalid_request | 값이 부적절 |
 | 422 | validation_error | 요청 스키마 위반 |
 | 429 | llm_rate_limited | LLM 한도 초과 |
