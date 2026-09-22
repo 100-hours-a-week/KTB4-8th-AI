@@ -1,3 +1,3 @@
 from typing import Literal
 
-AvailableTime = Literal[180, 360, 540]
+AvailableTime = Literal["180", "360", "540"]

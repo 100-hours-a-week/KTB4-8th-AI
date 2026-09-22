@@ -7,7 +7,7 @@
 > 2026/09/05 수정 — 재순위·코스 조합을 코스 추천 하나로 통합, 장소 임베딩 저장 추가, 오류 코드 세분화<br>
 > 2026/09/07 수정 — 헬스체크 엔드포인트 안내 추가, 장소 검증 동명 후보 처리를 사용자 선택 요청에서 LLM 자동 선택(신뢰도순 정렬, candidates 목록 유지)으로 변경, 코스 추천 최대 3개 제한 명시, 행사 기간을 원문 문자열에서 시작일·종료일(analyze-video 추출 → verify-place 웹검색 보완)로 구조화<br>
 > 2026/09/08 수정 — 벡터 DB를 Pinecone에서 Chroma(임베디드)로 변경, `preference`를 슬롯 추출·코스 추천에서 모두 제거하고 코스 추천에 `history_place_ids`(최근 저장 장소 최대 50개, 취향 벡터 계산용) 추가<br>
-> 2026/09/22 수정 — 공통 카테고리 정의(2-2) 섹션 추가(카테고리 6종·구분 기준·정규화 기준, 기타 포함), 코스 추천 중단 엔드포인트 및 장소 임베딩 삭제 엔드포인트 반영, 영상 분석·슬롯 추출·코스 추천이 `PlaceCategory` 하나를 공유하도록 통일, `available_time`을 문자열(3시간 등)에서 분 단위 숫자(180·360·540)로 변경
+> 2026/09/22 수정 — 공통 카테고리 정의(2-2) 섹션 추가(카테고리 6종·구분 기준·정규화 기준, 기타 포함), 코스 추천 중단 엔드포인트 및 장소 임베딩 삭제 엔드포인트 반영, 영상 분석·슬롯 추출·코스 추천이 `PlaceCategory` 하나를 공유하도록 통일, `available_time`을 "3시간" 등 라벨에서 분을 나타내는 문자열(`"180"`·`"360"`·`"540"`)로 변경 (Gemini 구조화된 출력의 `enum` 제약이 숫자 타입을 지원하지 않아 숫자가 아닌 문자열로 확정)
 >
 > 본 문서는 「KeepGo」의 API 설계서 입니다.
 
@@ -201,7 +201,7 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 > 응답 데이터 : 갱신된 슬롯, 정성 조건, 봇 메시지
 
 > [!NOTE]
-> 슬롯 내부 요소는 전부 String이며 `null` 값이 될 수 있습니다. 단 `available_time`은 분 단위 숫자로, 정해진 세 값(`180`·`360`·`540`, 각각 3시간·6시간·9시간) 중 하나만 가질 수 있습니다.
+> 슬롯 내부 요소는 전부 String이며 `null` 값이 될 수 있습니다. `available_time`은 분 단위를 나타내는 문자열로, 정해진 세 값(`"180"`·`"360"`·`"540"`, 각각 3시간·6시간·9시간) 중 하나만 가질 수 있습니다. 숫자가 아니라 문자열인 이유는 Gemini의 구조화된 출력(`response_schema`)이 `enum` 제약에 숫자 타입을 지원하지 않기 때문입니다.
 
 > [!NOTE]
 > `query`는 이전 턴의 `query`와 이번 발화를 종합해 **현재 유효한 내용만** 재작성합니다(모순·철회된 표현은 제거). 슬롯 외 조건은 이 값 하나로 관리하며, 사용자의 과거 취향은 `recommend-courses`의 `history_place_ids`로 별도 반영합니다.
@@ -210,7 +210,7 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
-from app.schemas.available_time import AvailableTime  # Literal[180, 360, 540]
+from app.schemas.available_time import AvailableTime  # Literal["180", "360", "540"]
 from app.schemas.category import PlaceCategory
 
 class Slots(BaseModel):
@@ -218,7 +218,7 @@ class Slots(BaseModel):
     origin: Optional[str] = Field(default=None, description="출발지")
     region: Optional[str] = Field(default=None, description="지역")
     datetime: Optional[str] = Field(default=None, description="날짜·시간대")
-    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
+    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분, 문자열) (\"180\"·\"360\"·\"540\")")
     category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
 
 
@@ -271,7 +271,7 @@ ExtractResponse = APIResponse[ExtractData]
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
-from app.schemas.available_time import AvailableTime  # Literal[180, 360, 540]
+from app.schemas.available_time import AvailableTime  # Literal["180", "360", "540"]
 from app.schemas.category import PlaceCategory
 
 class Coordinate(BaseModel):
@@ -302,7 +302,7 @@ class RecommendCoursesRequest(BaseModel):
     query: str = Field(..., description="정성 조건")
     candidates: List[RecommendCandidate] = Field(..., max_length=50, description="좌표 반경 1차 필터링을 통과한 후보 목록 (최대 50개)")
     history_place_ids: List[HistoryPlace] = Field(default_factory=list, max_length=50, description="최근 저장한 장소 목록, 취향 벡터 계산용 (최대 50개)")
-    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
+    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분, 문자열) (\"180\"·\"360\"·\"540\")")
     category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
     datetime: Optional[str] = Field(default=None, description="방문 날짜·시간대 (영업시간 판단 기준)")
     origin: Optional[Coordinate] = Field(default=None, description="출발지 좌표 (첫 장소까지의 이동 시간 계산 기준)")
@@ -548,7 +548,7 @@ AI Server
       "origin": null,
       "region": "성수",
       "datetime": "2026-09-06",
-      "available_time": 180,
+      "available_time": "180",
       "category": "카페"
     },
     "query": "조용한",
@@ -587,7 +587,7 @@ AI Server
     { "place_id": "p010", "saved_at": "2026-08-20" },
     { "place_id": "p022", "saved_at": "2026-08-25" }
   ],
-  "available_time": 180,
+  "available_time": "180",
   "category": "카페",
   "datetime": "2026-09-06 14:00",
   "origin": { "lat": 37.5445, "lng": 127.0557 }
