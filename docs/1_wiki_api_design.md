@@ -63,7 +63,39 @@ class APIResponse(BaseModel, Generic[T]):
 
 ---
 
-#### 2-2) 영상 분석
+#### 2-2) 공통 카테고리 정의
+
+`analyze-video`, `extract` 등 카테고리를 다루는 모든 엔드포인트는 아래 `PlaceCategory` 하나를 공유해서 사용합니다. 엔드포인트마다 카테고리 값이 달라지는 것을 막기 위해 별도 모듈(`app/schemas/category.py`)로 분리했습니다.
+
+| 카테고리 | 설명 | 예시 |
+| --- | --- | --- |
+| 카페 | 커피·디저트 등을 파는 상업 공간 | 성수 A카페 |
+| 팝업 | 한시적으로 운영되는 팝업스토어 | OO 브랜드 팝업 |
+| 전시 | 전시회·갤러리 | OO 사진전 |
+| 맛집 | 식사를 파는 상업 공간 | 농민뜨끈이 |
+| 명소 | 특정 업장이 아니라 장소·동네 자체가 컨텐츠가 되는 곳 | 한강, 경복궁, 행궁동 |
+
+> [!NOTE]
+> 구분 기준: 특정 업장 방문이 핵심이면 카페/팝업/전시/맛집 중 하나, 장소·동네를 둘러보는 것 자체가 핵심이면 명소로 분류합니다. (예: "성수동 카페 방문" 브이로그는 카페, "성수동 골목 구경" 브이로그는 명소)
+
+<details>
+<summary>Pydantic 모델 상세보기</summary>
+
+<pre><code class="language-python">
+from typing import Literal
+
+PlaceCategory = Literal["카페", "팝업", "전시", "맛집", "명소"]
+</code></pre>
+
+</details>
+
+**정규화 기준**
+
+동의어·표기 차이(예: "커피숍" → 카페)에 대한 별도 매핑 테이블은 두지 않습니다. `extract`, `analyze-video`가 LLM을 호출할 때 이 `PlaceCategory`를 포함한 응답 스키마를 `response_schema`로 넘겨 구조화된 출력을 강제하면, 모델이 생성 단계에서부터 이 5개 값 중 하나만 출력하도록 제한되기 때문에 변형 표현이 애초에 출력될 수 없습니다.
+
+---
+
+#### 2-3) 영상 분석
 
 유튜브 쇼츠 URL을 받아 장소 정보를 구조화해 반환합니다.
 
@@ -104,7 +136,7 @@ AnalyzeVideoResponse = APIResponse[AnalyzeVideoData]
 
 ---
 
-#### 2-3) 장소 검증
+#### 2-4) 장소 검증
 
 분석된 장소명·지역으로 실제 존재 여부와 영업시간, 좌표를 확인합니다.
 
@@ -156,7 +188,7 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 
 ---
 
-#### 2-4) 슬롯 추출
+#### 2-5) 슬롯 추출
 
 사용자 발화에서 대화 슬롯과 정성 조건을 추출합니다.
 
@@ -210,7 +242,7 @@ ExtractResponse = APIResponse[ExtractData]
 
 ---
 
-#### 2-5) 코스 추천
+#### 2-6) 코스 추천
 
 정성 조건과 후보 목록을 받아, 코스 조합·제목·방문 순서·도착 시각까지 생성합니다.
 
@@ -300,7 +332,7 @@ RecommendCoursesResponse = APIResponse[RecommendCoursesData]
 
 ---
 
-#### 2-6) 장소 임베딩 저장
+#### 2-7) 장소 임베딩 저장
 
 보관함에 저장된 장소의 요약을 임베딩해 벡터 DB에 저장합니다.
 
