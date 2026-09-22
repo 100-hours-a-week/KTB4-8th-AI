@@ -21,8 +21,13 @@ class GeminiClient(LLMClient):
         max_tokens: int | None = None,
         timeout: float | None = None,
     ) -> LLMResponse:
+        config = {}
+        if response_schema is not None:
+            config["response_mime_type"] = "application/json"
+            config["response_schema"] = response_schema
+
         response = self._client.models.generate_content(
-            model=self._model, contents=[m.content for m in messages]
+            model=self._model, contents=[m.content for m in messages], config=config
         )
 
         return LLMResponse(text=response.text, parsed=response.parsed)
