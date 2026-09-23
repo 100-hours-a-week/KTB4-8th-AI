@@ -1,18 +1,27 @@
 from datetime import date as date_type
-from typing import Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from app.schemas.available_time import AvailableTime
 from app.schemas.category import PlaceCategory
 from app.schemas.common import APIResponse
+
+AvailableTime = Literal["180", "360", "540"]
+
+VisitDatetime = Annotated[
+    Optional[str],
+    Field(
+        pattern=r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$",
+        description="날짜·시간대 (YYYY-MM-DD 또는 YYYY-MM-DD HH:MM, 시간을 모르면 날짜만)",
+    ),
+]
 
 
 class Slots(BaseModel):
     """대화 슬롯 모델. 내부 요소는 전부 String이며 null이 될 수 있음"""
     origin: Optional[str] = Field(default=None, description="출발지")
     region: Optional[str] = Field(default=None, description="지역")
-    datetime: Optional[str] = Field(default=None, description="날짜·시간대")
+    datetime: VisitDatetime = None
     available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
     category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
 

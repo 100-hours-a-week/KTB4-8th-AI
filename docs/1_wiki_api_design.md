@@ -210,14 +210,20 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
-from app.schemas.available_time import AvailableTime  # Literal["180", "360", "540"]
 from app.schemas.category import PlaceCategory
+
+AvailableTime = Literal["180", "360", "540"]
+
+VisitDatetime = Annotated[
+    Optional[str],
+    Field(pattern=r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$", description="날짜·시간대 (YYYY-MM-DD 또는 YYYY-MM-DD HH:MM, 시간을 모르면 날짜만)"),
+]
 
 class Slots(BaseModel):
     """대화 슬롯 모델. 내부 요소는 전부 String이며 null이 될 수 있음"""
     origin: Optional[str] = Field(default=None, description="출발지")
     region: Optional[str] = Field(default=None, description="지역")
-    datetime: Optional[str] = Field(default=None, description="날짜·시간대")
+    datetime: VisitDatetime = None
     available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분, 문자열) (\"180\"·\"360\"·\"540\")")
     category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
 
@@ -271,8 +277,9 @@ ExtractResponse = APIResponse[ExtractData]
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
-from app.schemas.available_time import AvailableTime  # Literal["180", "360", "540"]
 from app.schemas.category import PlaceCategory
+
+AvailableTime = Literal["180", "360", "540"]
 
 class Coordinate(BaseModel):
     """좌표"""
