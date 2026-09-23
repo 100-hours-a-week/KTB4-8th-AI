@@ -10,6 +10,7 @@ from app.core.exceptions import LLMInvalidResponseError, LLMRateLimitedError, LL
 from app.models.factory import get_llm_client
 from app.prompts.loader import load_prompt
 from app.schemas.extract import ExtractData, ExtractRequest, ExtractResponse
+from app.services.slot_merge import merge_slots
 
 @router.post("/v1/extract")
 async def extract(request: ExtractRequest) -> ExtractResponse:
@@ -33,5 +34,7 @@ async def extract(request: ExtractRequest) -> ExtractResponse:
         raise LLMInvalidResponseError(detail=str(e))
     except ValidationError as e:
         raise LLMInvalidResponseError(detail=str(e))
+
+    data.slot = merge_slots(request.prev_slot, data.slot)
 
     return ExtractResponse(message="extract_success", data=data)
