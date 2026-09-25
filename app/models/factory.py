@@ -8,7 +8,7 @@ _VIDEO_TIMEOUT = 60.0
 
 RETRY = {
     "retry_if_exception_type" : (ConnectionError, TimeoutError),
-    "stop_after_attempt" : 3,
+    "stop_after_attempt" : 2,   # 재시도 1회. 호출당 60초라 120초 전체 상한 안에 2번이 정확히 들어간다
     "wait_exponential_jitter" : True,
 }
 

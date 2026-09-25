@@ -226,3 +226,5 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,python
+# 임베디드 Chroma 저장소 — MySQL 에서 파생된 인덱스라 커밋하지 않는다
+chroma/

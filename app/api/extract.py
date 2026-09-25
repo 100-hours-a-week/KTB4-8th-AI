@@ -7,12 +7,12 @@ from pydantic import ValidationError
 from app.api.router import router
 from app.core.config import settings
 from app.core.exceptions import LLMInvalidResponseError, LLMRateLimitedError, LLMTimeoutError
-from app.models.factory import get_llm_client
+from app.models.factory import get_llm
 from app.prompts.loader import load_prompt
 from app.schemas.extract import ExtractData, ExtractRequest, ExtractResponse
 from app.services.slot_merge import merge_slots
 
-@router.post("/v1/extract")
+@router.post("/extract")
 async def extract(request: ExtractRequest) -> ExtractResponse:
     prompt = load_prompt(
         "extract",
@@ -22,7 +22,7 @@ async def extract(request: ExtractRequest) -> ExtractResponse:
         prev_query=request.prev_query or "없음",
     )
 
-    llm = get_llm_client().with_structured_output(ExtractData)
+    llm = get_llm().with_structured_output(ExtractData)
 
     try:
         data = await asyncio.wait_for(llm.ainvoke(prompt), timeout=settings.TIMEOUT_EXTRACT)
