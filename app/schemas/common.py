@@ -12,6 +12,8 @@ ResponseMessage = Literal[
     "extract_success",
     "recommend_success",
     "embed_success",
+    "cancel_accepted",
+    "embed_delete_success",
     "invalid_request",
     "validation_error",
     "llm_rate_limited",

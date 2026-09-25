@@ -6,7 +6,8 @@
 > 2026/09/01 최초 작성<br>
 > 2026/09/05 수정 — 재순위·코스 조합을 코스 추천 하나로 통합, 장소 임베딩 저장 추가, 오류 코드 세분화<br>
 > 2026/09/07 수정 — 헬스체크 엔드포인트 안내 추가, 장소 검증 동명 후보 처리를 사용자 선택 요청에서 LLM 자동 선택(신뢰도순 정렬, candidates 목록 유지)으로 변경, 코스 추천 최대 3개 제한 명시, 행사 기간을 원문 문자열에서 시작일·종료일(analyze-video 추출 → verify-place 웹검색 보완)로 구조화<br>
-> 2026/09/08 수정 — 벡터 DB를 Pinecone에서 Chroma(임베디드)로 변경, `preference`를 슬롯 추출·코스 추천에서 모두 제거하고 코스 추천에 `history_place_ids`(최근 저장 장소 최대 50개, 취향 벡터 계산용) 추가
+> 2026/09/08 수정 — 벡터 DB를 Pinecone에서 Chroma(임베디드)로 변경, `preference`를 슬롯 추출·코스 추천에서 모두 제거하고 코스 추천에 `history_place_ids`(최근 저장 장소 최대 50개, 취향 벡터 계산용) 추가<br>
+> 2026/09/22 수정 — 공통 카테고리 정의(2-2) 섹션 추가(카테고리 6종·구분 기준·정규화 기준, 기타 포함), 코스 추천 중단 엔드포인트 및 장소 임베딩 삭제 엔드포인트 반영, 영상 분석·슬롯 추출·코스 추천이 `PlaceCategory` 하나를 공유하도록 통일, `available_time`을 "3시간" 등 라벨에서 분을 나타내는 문자열(`"180"`·`"360"`·`"540"`)로 변경 (Gemini 구조화된 출력의 `enum` 제약이 숫자 타입을 지원하지 않아 숫자가 아닌 문자열로 확정)
 >
 > 본 문서는 「KeepGo」의 API 설계서 입니다.
 
@@ -29,6 +30,7 @@
 | POST | /v1/verify-place | 장소 존재 여부·영업시간 검증 및 좌표 조회 |
 | POST | /v1/extract | 사용자 발화에서 슬롯·정성 조건 추출 |
 | POST | /v1/recommend-courses | 후보 장소로 코스 조합·방문 순서·도착 시각 생성 |
+| POST | /v1/recommend-courses/{request_id}/cancel | 진행 중인 코스 추천 요청 중단 |
 | POST | /v1/embed-places | 장소 요약을 임베딩해 벡터 DB에 저장 |
 
 > [!NOTE]
@@ -62,7 +64,40 @@ class APIResponse(BaseModel, Generic[T]):
 
 ---
 
-#### 2-2) 영상 분석
+#### 2-2) 공통 카테고리 정의
+
+`analyze-video`, `extract` 등 카테고리를 다루는 모든 엔드포인트는 아래 `PlaceCategory` 하나를 공유해서 사용합니다. 엔드포인트마다 카테고리 값이 달라지는 것을 막기 위해 별도 모듈(`app/schemas/category.py`)로 분리했습니다.
+
+| 카테고리 | 설명 | 예시 |
+| --- | --- | --- |
+| 카페 | 커피·디저트 등을 파는 상업 공간 | 성수 A카페 |
+| 팝업 | 한시적으로 운영되는 팝업스토어 | OO 브랜드 팝업 |
+| 전시 | 전시회·갤러리 | OO 사진전 |
+| 맛집 | 식사를 파는 상업 공간 | 농민뜨끈이 |
+| 명소 | 특정 업장이 아니라 장소·동네 자체가 컨텐츠가 되는 곳 | 한강, 경복궁, 행궁동 |
+| 기타 | 위 5개 어디에도 해당하지 않는 경우 | - |
+
+> [!NOTE]
+> 구분 기준: 특정 업장 방문이 핵심이면 카페/팝업/전시/맛집 중 하나, 장소·동네를 둘러보는 것 자체가 핵심이면 명소로 분류합니다. (예: "성수동 카페 방문" 브이로그는 카페, "성수동 골목 구경" 브이로그는 명소) 이 중 어디에도 해당하지 않으면 기타로 분류합니다.
+
+<details>
+<summary>Pydantic 모델 상세보기</summary>
+
+<pre><code class="language-python">
+from typing import Literal
+
+PlaceCategory = Literal["카페", "팝업", "전시", "맛집", "명소", "기타"]
+</code></pre>
+
+</details>
+
+**정규화 기준**
+
+동의어·표기 차이(예: "커피숍" → 카페)에 대한 별도 매핑 테이블은 두지 않습니다. `extract`, `analyze-video`가 LLM을 호출할 때 이 `PlaceCategory`를 포함한 응답 스키마를 `response_schema`로 넘겨 구조화된 출력을 강제하면, 모델이 생성 단계에서부터 이 6개 값 중 하나만 출력하도록 제한되기 때문에 변형 표현이 애초에 출력될 수 없습니다.
+
+---
+
+#### 2-3) 영상 분석
 
 유튜브 쇼츠 URL을 받아 장소 정보를 구조화해 반환합니다.
 
@@ -80,6 +115,8 @@ class APIResponse(BaseModel, Generic[T]):
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
+from app.schemas.category import PlaceCategory
+
 class AnalyzeVideoRequest(BaseModel):
     """영상 분석 요청 모델"""
     video_url: str = Field(..., description="유튜브 쇼츠 영상 URL")
@@ -89,7 +126,7 @@ class AnalyzeVideoData(BaseModel):
     """영상 분석 결과 모델. 영상에서 확인되지 않은 항목은 null"""
     place_name: Optional[str] = Field(default=None, description="영상에서 확인된 장소명")
     region: Optional[str] = Field(default=None, description="영상에서 확인된 지역")
-    category: str = Field(..., description="카테고리 (카페·팝업·전시·맛집·기타)")
+    category: PlaceCategory = Field(..., description="카테고리 (카페·팝업·전시·맛집·명소·기타)")
     event_start_date: Optional[date] = Field(default=None, description="행사 시작일 (팝업·전시에서 영상에 명확히 나온 경우만)")
     event_end_date: Optional[date] = Field(default=None, description="행사 종료일 (팝업·전시에서 영상에 명확히 나온 경우만)")
     confidence: float = Field(..., description="추출 결과에 대한 신뢰도")
@@ -103,7 +140,7 @@ AnalyzeVideoResponse = APIResponse[AnalyzeVideoData]
 
 ---
 
-#### 2-3) 장소 검증
+#### 2-4) 장소 검증
 
 분석된 장소명·지역으로 실제 존재 여부와 영업시간, 좌표를 확인합니다.
 
@@ -155,7 +192,7 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 
 ---
 
-#### 2-4) 슬롯 추출
+#### 2-5) 슬롯 추출
 
 사용자 발화에서 대화 슬롯과 정성 조건을 추출합니다.
 
@@ -164,7 +201,7 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 > 응답 데이터 : 갱신된 슬롯, 정성 조건, 봇 메시지
 
 > [!NOTE]
-> 슬롯 내부 요소는 전부 String이며 `null` 값이 될 수 있습니다. 단 `available_time`은 정해진 세 값(`"3시간"`·`"6시간"`·`"9시간"`) 중 하나만 가질 수 있습니다.
+> 슬롯 내부 요소는 전부 String이며 `null` 값이 될 수 있습니다. `available_time`은 분 단위를 나타내는 문자열로, 정해진 세 값(`"180"`·`"360"`·`"540"`, 각각 3시간·6시간·9시간) 중 하나만 가질 수 있습니다. 숫자가 아니라 문자열인 이유는 Gemini의 구조화된 출력(`response_schema`)이 `enum` 제약에 숫자 타입을 지원하지 않기 때문입니다.
 
 > [!NOTE]
 > `query`는 이전 턴의 `query`와 이번 발화를 종합해 **현재 유효한 내용만** 재작성합니다(모순·철회된 표현은 제거). 슬롯 외 조건은 이 값 하나로 관리하며, 사용자의 과거 취향은 `recommend-courses`의 `history_place_ids`로 별도 반영합니다.
@@ -173,18 +210,22 @@ VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
-class AvailableTime(str, Enum):
-    THREE_HOURS = "3시간"
-    SIX_HOURS = "6시간"
-    NINE_HOURS = "9시간"
+from app.schemas.category import PlaceCategory
+
+AvailableTime = Literal["180", "360", "540"]
+
+VisitDatetime = Annotated[
+    Optional[str],
+    Field(pattern=r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$", description="날짜·시간대 (YYYY-MM-DD 또는 YYYY-MM-DD HH:MM, 시간을 모르면 날짜만)"),
+]
 
 class Slots(BaseModel):
     """대화 슬롯 모델. 내부 요소는 전부 String이며 null이 될 수 있음"""
     origin: Optional[str] = Field(default=None, description="출발지")
     region: Optional[str] = Field(default=None, description="지역")
-    datetime: Optional[str] = Field(default=None, description="날짜·시간대")
-    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간 (3시간·6시간·9시간)")
-    category: Optional[str] = Field(default=None, description="카테고리")
+    datetime: VisitDatetime = None
+    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분, 문자열) (\"180\"·\"360\"·\"540\")")
+    category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
 
 
 class ExtractRequest(BaseModel):
@@ -209,7 +250,7 @@ ExtractResponse = APIResponse[ExtractData]
 
 ---
 
-#### 2-5) 코스 추천
+#### 2-6) 코스 추천
 
 정성 조건과 후보 목록을 받아, 코스 조합·제목·방문 순서·도착 시각까지 생성합니다.
 
@@ -236,6 +277,10 @@ ExtractResponse = APIResponse[ExtractData]
 <summary>Pydantic 모델 상세보기</summary>
 
 <pre><code class="language-python">
+from app.schemas.category import PlaceCategory
+
+AvailableTime = Literal["180", "360", "540"]
+
 class Coordinate(BaseModel):
     """좌표"""
     lat: float = Field(..., description="위도")
@@ -260,11 +305,12 @@ class HistoryPlace(BaseModel):
 
 class RecommendCoursesRequest(BaseModel):
     """코스 추천 요청 모델"""
+    request_id: str = Field(..., description="이 추천 요청의 고유 식별자 (Backend가 생성, 중단 API에서 사용)")
     query: str = Field(..., description="정성 조건")
     candidates: List[RecommendCandidate] = Field(..., max_length=50, description="좌표 반경 1차 필터링을 통과한 후보 목록 (최대 50개)")
     history_place_ids: List[HistoryPlace] = Field(default_factory=list, max_length=50, description="최근 저장한 장소 목록, 취향 벡터 계산용 (최대 50개)")
-    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간 (3시간·6시간·9시간)")
-    category: Optional[str] = Field(default=None, description="카테고리")
+    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분, 문자열) (\"180\"·\"360\"·\"540\")")
+    category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
     datetime: Optional[str] = Field(default=None, description="방문 날짜·시간대 (영업시간 판단 기준)")
     origin: Optional[Coordinate] = Field(default=None, description="출발지 좌표 (첫 장소까지의 이동 시간 계산 기준)")
 
@@ -298,7 +344,7 @@ RecommendCoursesResponse = APIResponse[RecommendCoursesData]
 
 ---
 
-#### 2-6) 장소 임베딩 저장
+#### 2-7) 장소 임베딩 저장
 
 보관함에 저장된 장소의 요약을 임베딩해 벡터 DB에 저장합니다.
 
@@ -509,7 +555,7 @@ AI Server
       "origin": null,
       "region": "성수",
       "datetime": "2026-09-06",
-      "available_time": "3시간",
+      "available_time": "180",
       "category": "카페"
     },
     "query": "조용한",
@@ -524,6 +570,7 @@ AI Server
 요청 예시
 ```json
 {
+  "request_id": "req_c9f1a2",
   "query": "조용한",
   "candidates": [
     {
@@ -547,7 +594,7 @@ AI Server
     { "place_id": "p010", "saved_at": "2026-08-20" },
     { "place_id": "p022", "saved_at": "2026-08-25" }
   ],
-  "available_time": "3시간",
+  "available_time": "180",
   "category": "카페",
   "datetime": "2026-09-06 14:00",
   "origin": { "lat": 37.5445, "lng": 127.0557 }
@@ -616,7 +663,7 @@ AI Server
 
 | Status Code | Message | Description |
 | --- | --- | --- |
-| 200 | analyze_success / verify_success / extract_success / recommend_success / embed_success | 요청 성공 |
+| 200 | analyze_success / verify_success / extract_success / recommend_success / embed_success / cancel_accepted / embed_delete_success | 요청 성공 |
 | 400 | invalid_request | 값이 부적절 |
 | 422 | validation_error | 요청 스키마 위반 |
 | 429 | llm_rate_limited | LLM 한도 초과 |
