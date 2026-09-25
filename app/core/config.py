@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     MODEL_PROVIDER: Literal["gemini", "local"] = "gemini"
     TIMEOUT_ANALYZE_VIDEO: int = 120
     TIMEOUT_VERIFY_PLACE: int = 60
+    TIMEOUT_EXTRACT: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

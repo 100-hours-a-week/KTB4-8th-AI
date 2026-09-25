@@ -7,8 +7,10 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.141.1",
     "google-genai>=2.20.0",
+    "langchain-google-genai>=4.4.0",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.3",
+    "pyyaml>=6.0.3",
     "uvicorn>=0.53.0",
 ]
