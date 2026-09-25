@@ -1,4 +1,5 @@
 from datetime import date
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 SYSTEM_PROMPT = """\
@@ -84,3 +85,32 @@ ANALYZE_VIDEO_PROMPT = ChatPromptTemplate.from_messages(
         ]),
     ]
 )
+
+
+# ── 배치: Gemini 호출 1번에 영상 여러 개 ──────────────────────────────
+
+# 영상 개수가 호출마다 달라서 {video_url} 템플릿 하나로는 표현이 안 된다.
+# 영상마다 앞에 [영상 N] 라벨을 붙여 메시지를 코드로 조립한다.
+_BATCH_INSTRUCTION = """
+## 영상이 여러 개일 때
+
+영상마다 앞에 [영상 N] 번호가 붙어 있다. 영상마다 결과를 하나씩, 번호
+순서대로 낸다. video_index 에는 그 번호를 그대로 적는다. 영상을 건너뛰지 않는다.
+
+영상끼리 정보를 섞지 않는다. 한 영상의 화면 글자·자막·음성은 그 영상의
+결과에만 쓴다. screen_text 도 그 영상에서 읽은 것만 적는다.
+"""
+
+
+def build_batch_messages(video_urls: list[str]) -> list[BaseMessage]:
+    content: list[dict] = [
+        {"type": "text", "text": f"영상 {len(video_urls)}개를 각각 분석해라."}
+    ]
+    for i, url in enumerate(video_urls, start=1):
+        content.append({"type": "text", "text": f"[영상 {i}]"})
+        content.append({"type": "video", "url": url})
+
+    return [
+        SystemMessage(content=SYSTEM_PROMPT + _BATCH_INSTRUCTION),
+        HumanMessage(content=content),
+    ]
