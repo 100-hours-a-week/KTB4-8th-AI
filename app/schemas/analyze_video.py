@@ -10,40 +10,55 @@ class AnalyzeVideoRequest(BaseModel):
     video_url : str = Field(description = "유튜브 쇼츠 영상 url")
 
 #응답 스키마
-class AnalyzeVideoData(BaseModel):
-    place_name : Optional[str] = Field(default = None, description = "영상에 나온 장소 이름")
-    region : Optional[str] = Field(default = None, description = "영상에 나온 장소 위치")
+class AnalyzedPlace(BaseModel):
+    place_name : Optional[str] = Field(default = None, description = "장소의 고유 상호. 읽을 수 없으면 null. '~맛집들'·지역명 같은 묶음 표현은 상호가 아니다")
+    region : Optional[str] = Field(default = None, description = "장소 위치")
     category : PlaceCategory = Field(description = "카페, 팝업, 전시, 맛집, 명소 어디에도 해당하지 않으면 기타로 분류한다")
     event_start_date : Optional[date] = Field(default = None, description = "행사 개최일, 팝업/전시 카테고리에서만 값을 채움")
     event_end_date : Optional[date] = Field(default = None, description = "행사 마감일, 팝업/전시 카테고리에서만 값을 채움")
     confidence : float = Field(description = "추출된 장소에 대한 신뢰도", ge = 0.0, le = 1.0)
     summary : Optional[str] = Field(default = None, description = "장소 요약")
 
+
+class AnalyzeVideoData(BaseModel):
+    # 한 영상에 여러 곳이 나오는 모음 영상이 흔해서 목록으로 받는다 — 테스트 영상
+    # 11개 중 4개가 6~16곳짜리였다. 하나만 받게 했을 땐 모델이 매번 아무거나
+    # 골라 결과가 회차마다 바뀌었고 나머지는 버려졌다.
+    # 이름을 못 읽은 장소도 넣는다 — 지역·요약이 있어 나중에 특징 검색으로
+    # 찾을 여지가 있고, 버리면 되돌릴 수 없다.
+    places : list[AnalyzedPlace] = Field(description = "영상에 나온 방문 가능한 장소 전부, 등장 순서대로. 없으면 빈 목록")
+
 AnalyzeVideoResponse = APIResponse[AnalyzeVideoData]
 
 
-# LLM 전용 스키마. 응답으로 나가지 않는다 — 서비스가 to_data() 로 옮기며 버린다.
-#
-# screen_text 가 맨 앞에 있는 것이 이 모델의 존재 이유다. 필드 순서가 곧
-# 모델의 작업 순서라, 화면 글자를 먼저 적게 하면 그 과정에서 로고·현수막을
-# 실제로 읽고 place_name 이 거기서 나온다. 이 칸이 없으면 읽는 단계 자체가
-# 생략되어 place_name 이 계속 비어서 나왔다.
+# ── LLM 전용 스키마. 응답으로 나가지 않는다 — to_data() 로 옮기며 근거 칸은 버린다.
+
+# 장소마다 근거 칸. "몇 초 지점, 무엇에서 읽었는지"를 쓰게 하니 모음 영상에서
+# 6~16곳을 빠짐없이 뽑았다(실측). 부모 순서를 (AnalyzedPlace, _PlaceEvidence)
+# 로 두면 이 두 칸이 place_name 보다 앞에 온다 — 근거를 먼저 적어야 실제로 본다.
+class _PlaceEvidence(BaseModel):
+    time_range : str = Field(description = "영상에서 이 장소가 나오는 구간. 예: '00:03~00:08'")
+    name_source : str = Field(description = "상호를 무엇에서 읽었는지 — 간판·로고·현수막·자막·음성. 못 읽었으면 '없음'")
+
+
+class PlaceLLM(AnalyzedPlace, _PlaceEvidence):
+    def to_place(self) -> AnalyzedPlace:
+        return AnalyzedPlace(**self.model_dump(exclude={"time_range", "name_source"}))
+
+
+# screen_text 가 맨 앞에 있는 이유: 필드 순서가 곧 모델의 작업 순서라, 화면
+# 글자를 먼저 적게 하면 그 과정에서 로고·현수막을 실제로 읽는다. 이 칸이 없을
+# 땐 읽는 단계 자체가 생략되어 place_name 이 계속 비어서 나왔다.
 class AnalyzeVideoLLM(BaseModel):
     screen_text : list[str] = Field(
         description = "영상 화면에서 읽은 글자를 전부. 자막뿐 아니라 간판·현수막·"
                       "메뉴판·포장지·차량 표기·벽면 문구, 티셔츠·모자·앞치마의 로고까지. "
                       "각 항목 앞에 몇 초 지점인지 적는다. 예: '00:03 모자 로고 - 청년방앗간'"
     )
-    place_name : Optional[str] = Field(default = None, description = "영상에 나온 장소 이름. screen_text 에서 찾는다")
-    region : Optional[str] = Field(default = None, description = "영상에 나온 장소 위치")
-    category : PlaceCategory = Field(description = "카페, 팝업, 전시, 맛집, 명소 어디에도 해당하지 않으면 기타로 분류한다")
-    event_start_date : Optional[date] = Field(default = None, description = "장소 개최일, 팝업/전시 카테고리에서만 값을 채움")
-    event_end_date : Optional[date] = Field(default = None, description = "장소 마감일, 팝업/전시 카테고리에서만 값을 채움")
-    confidence : float = Field(description = "추출된 장소에 대한 신뢰도", ge = 0.0, le = 1.0)
-    summary : Optional[str] = Field(default = None, description = "장소 요약")
+    places : list[PlaceLLM] = Field(description = "영상에 나온 방문 가능한 장소 전부, 등장 순서대로. 없으면 빈 목록")
 
     def to_data(self) -> AnalyzeVideoData:
-        return AnalyzeVideoData(**self.model_dump(exclude={"screen_text"}))
+        return AnalyzeVideoData(places=[p.to_place() for p in self.places])
 
 # ── 배치 분석 (/v1/analyze-videos) ────────────────────────────────────
 
@@ -74,11 +89,11 @@ class _Indexed(BaseModel):
 
 
 # 부모 순서를 (AnalyzeVideoLLM, _Indexed) 로 두면 필드가 video_index →
-# screen_text → place_name … 순이 된다. 번호를 먼저 적게 해야 모델이 "지금
-# 몇 번 영상을 쓰는 중인지" 붙잡고, 영상끼리 정보가 섞이는 걸 줄인다.
+# screen_text → places 순이 된다. 번호를 먼저 적게 해야 모델이 "지금 몇 번
+# 영상을 쓰는 중인지" 붙잡고, 영상끼리 정보가 섞이는 걸 줄인다.
+# to_data() 는 places 만 옮기므로 부모 것을 그대로 쓴다.
 class AnalyzeVideoBatchItemLLM(AnalyzeVideoLLM, _Indexed):
-    def to_data(self) -> AnalyzeVideoData:
-        return AnalyzeVideoData(**self.model_dump(exclude={"screen_text", "video_index"}))
+    pass
 
 
 class AnalyzeVideoBatchLLM(BaseModel):

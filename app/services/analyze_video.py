@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from app.core.config import settings
 from app.core.exceptions import InvalidRequestError, LLMInvalidResponseError
 from app.core.logging import log_llm
-from app.models.factory import RETRY, get_llm, to_domain_error
+from app.models.factory import get_llm, to_domain_error
 from app.prompts.analyze_video import ANALYZE_VIDEO_PROMPT, build_batch_messages
 from app.schemas.analyze_video import (
     AnalyzeVideoBatchLLM,
@@ -33,7 +33,7 @@ _YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
 async def analyze_video(req: AnalyzeVideoRequest) -> AnalyzeVideoData:
     chain = ANALYZE_VIDEO_PROMPT | get_llm().with_structured_output(
         AnalyzeVideoLLM, method="json_schema", include_raw=True
-    ).with_retry(**RETRY)
+    )
 
     started = time.perf_counter()
     try:
@@ -90,7 +90,7 @@ async def _analyze_group(urls: list[str]) -> list[VideoAnalysisResult]:
     """
     chain = get_llm().with_structured_output(
         AnalyzeVideoBatchLLM, method="json_schema", include_raw=True
-    ).with_retry(**RETRY)
+    )
 
     started = time.perf_counter()
     try:

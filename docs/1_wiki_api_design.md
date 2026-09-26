@@ -7,7 +7,8 @@
 > 2026/09/05 수정 — 재순위·코스 조합을 코스 추천 하나로 통합, 장소 임베딩 저장 추가, 오류 코드 세분화<br>
 > 2026/09/07 수정 — 헬스체크 엔드포인트 안내 추가, 장소 검증 동명 후보 처리를 사용자 선택 요청에서 LLM 자동 선택(신뢰도순 정렬, candidates 목록 유지)으로 변경, 코스 추천 최대 3개 제한 명시, 행사 기간을 원문 문자열에서 시작일·종료일(analyze-video 추출 → verify-place 웹검색 보완)로 구조화<br>
 > 2026/09/08 수정 — 벡터 DB를 Pinecone에서 Chroma(임베디드)로 변경, `preference`를 슬롯 추출·코스 추천에서 모두 제거하고 코스 추천에 `history_place_ids`(최근 저장 장소 최대 50개, 취향 벡터 계산용) 추가<br>
-> 2026/09/22 수정 — 공통 카테고리 정의(2-2) 섹션 추가(카테고리 6종·구분 기준·정규화 기준, 기타 포함), 코스 추천 중단 엔드포인트 및 장소 임베딩 삭제 엔드포인트 반영, 영상 분석·슬롯 추출·코스 추천이 `PlaceCategory` 하나를 공유하도록 통일, `available_time`을 "3시간" 등 라벨에서 분을 나타내는 문자열(`"180"`·`"360"`·`"540"`)로 변경 (Gemini 구조화된 출력의 `enum` 제약이 숫자 타입을 지원하지 않아 숫자가 아닌 문자열로 확정)
+> 2026/09/22 수정 — 공통 카테고리 정의(2-2) 섹션 추가(카테고리 6종·구분 기준·정규화 기준, 기타 포함), 코스 추천 중단 엔드포인트 및 장소 임베딩 삭제 엔드포인트 반영, 영상 분석·슬롯 추출·코스 추천이 `PlaceCategory` 하나를 공유하도록 통일, `available_time`을 "3시간" 등 라벨에서 분을 나타내는 문자열(`"180"`·`"360"`·`"540"`)로 변경 (Gemini 구조화된 출력의 `enum` 제약이 숫자 타입을 지원하지 않아 숫자가 아닌 문자열로 확정)<br>
+> 2026/09/26 수정 — 영상 분석 응답을 장소 1개에서 장소 목록(`places`)으로 변경. 한 영상에 여러 가게를 이어 보여주는 모음 영상(실측 11개 중 4개, 6~16곳)에서 장소 하나만 받으면 회차마다 다른 곳이 골라지고 나머지가 버려졌기 때문. 상호를 읽지 못한 장소도 `place_name: null`로 목록에 포함
 >
 > 본 문서는 「KeepGo」의 API 설계서 입니다.
 
@@ -26,7 +27,7 @@
 
 | HTTP Method | 엔드포인트 | 기능 설명 |
 | --- | --- | --- |
-| POST | /v1/analyze-video | 유튜브 쇼츠 영상 분석 (장소명·지역·카테고리·행사 시작일·종료일 추출) |
+| POST | /v1/analyze-video | 유튜브 쇼츠 영상 분석 (영상에 나온 장소 전부의 장소명·지역·카테고리·행사 시작일·종료일 추출) |
 | POST | /v1/verify-place | 장소 존재 여부·영업시간 검증 및 좌표 조회 |
 | POST | /v1/extract | 사용자 발화에서 슬롯·정성 조건 추출 |
 | POST | /v1/recommend-courses | 후보 장소로 코스 조합·방문 순서·도착 시각 생성 |
@@ -99,14 +100,17 @@ PlaceCategory = Literal["카페", "팝업", "전시", "맛집", "명소", "기�
 
 #### 2-3) 영상 분석
 
-유튜브 쇼츠 URL을 받아 장소 정보를 구조화해 반환합니다.
+유튜브 쇼츠 URL을 받아 영상에 나온 방문 가능한 장소를 전부 찾아, 장소마다 정보를 구조화해 반환합니다.
 
 > 요청 데이터 : 영상 URL
 
-> 응답 데이터 : 장소명·지역·카테고리·행사 시작일·종료일·신뢰도·요약
+> 응답 데이터 : 장소 목록(`places`) — 장소마다 장소명·지역·카테고리·행사 시작일·종료일·신뢰도·요약
 
 > [!NOTE]
-> 영상에서 확인되지 않은 항목은 임의로 채우지 않고 `null`로 반환합니다. `category`(애매하면 "기타")와 `confidence`는 항상 값이 있습니다.
+> 한 영상에 여러 곳이 나오는 모음 영상이면 `places`에 등장 순서대로 전부 담깁니다. 방문할 장소가 없는 영상(브이로그·리액션 등)은 빈 목록입니다. 백엔드는 `places`의 원소마다 `verify-place`를 호출합니다.
+
+> [!NOTE]
+> 영상에서 확인되지 않은 항목은 임의로 채우지 않고 `null`로 반환합니다. 상호를 읽지 못한 장소도 `place_name: null`로 목록에 포함합니다(지역·요약으로 나중에 찾을 여지를 남기기 위함). 장소마다 `category`(애매하면 "기타")와 `confidence`는 항상 값이 있습니다.
 
 > [!NOTE]
 > `event_start_date`·`event_end_date`는 `category`가 팝업·전시일 때만 채웁니다. 영상에 명확히 나오지 않으면 `null`로 두고, `verify-place`가 웹검색으로 보완합니다.
@@ -122,15 +126,20 @@ class AnalyzeVideoRequest(BaseModel):
     video_url: str = Field(..., description="유튜브 쇼츠 영상 URL")
 
 
-class AnalyzeVideoData(BaseModel):
-    """영상 분석 결과 모델. 영상에서 확인되지 않은 항목은 null"""
-    place_name: Optional[str] = Field(default=None, description="영상에서 확인된 장소명")
+class AnalyzedPlace(BaseModel):
+    """영상에 나온 장소 하나. 영상에서 확인되지 않은 항목은 null"""
+    place_name: Optional[str] = Field(default=None, description="영상에서 확인된 장소명 (읽지 못했으면 null)")
     region: Optional[str] = Field(default=None, description="영상에서 확인된 지역")
     category: PlaceCategory = Field(..., description="카테고리 (카페·팝업·전시·맛집·명소·기타)")
     event_start_date: Optional[date] = Field(default=None, description="행사 시작일 (팝업·전시에서 영상에 명확히 나온 경우만)")
     event_end_date: Optional[date] = Field(default=None, description="행사 종료일 (팝업·전시에서 영상에 명확히 나온 경우만)")
     confidence: float = Field(..., description="추출 결과에 대한 신뢰도")
     summary: Optional[str] = Field(default=None, description="장소 특징 요약, 자연어 1~2문장")
+
+
+class AnalyzeVideoData(BaseModel):
+    """영상 분석 결과 모델"""
+    places: list[AnalyzedPlace] = Field(..., description="영상에 나온 장소 전부, 등장 순서대로 (없으면 빈 목록)")
 
 
 AnalyzeVideoResponse = APIResponse[AnalyzeVideoData]
@@ -399,7 +408,7 @@ Frontend
 Backend
   ├─(콘텐츠 수집)→ AI Server
   │   ├─→ POST /v1/analyze-video      (영상 분석)
-  │   ├─→ POST /v1/verify-place       (장소 검증, 분석 결과를 이어서 전달)
+  │   ├─→ POST /v1/verify-place       (장소 검증, 분석 결과의 장소마다 호출)
   │   └─→ POST /v1/embed-places       (임베딩 저장, MySQL 저장 후 호출)
   │
   ├─(챗봇 추천)→ AI Server
@@ -453,7 +462,7 @@ AI Server
 ### 4. API 요청 및 응답 예시
 
 - 엔드포인트 : POST /v1/analyze-video
-기능 : 유튜브 쇼츠 URL을 분석해 장소 정보를 구조화 반환
+기능 : 유튜브 쇼츠 URL을 분석해 영상에 나온 장소 전부를 구조화 반환
 
 요청 예시
 ```json
@@ -462,18 +471,31 @@ AI Server
 }
 ```
 
-응답 예시
+응답 예시 (모음 영상 — 장소 여러 곳, 상호를 못 읽은 곳 포함)
 ```json
 {
   "message": "analyze_success",
   "data": {
-    "place_name": "농민뜨끈이",
-    "region": null,
-    "category": "맛집",
-    "event_start_date": null,
-    "event_end_date": null,
-    "confidence": 0.95,
-    "summary": "..."
+    "places": [
+      {
+        "place_name": "농민뜨끈이",
+        "region": null,
+        "category": "맛집",
+        "event_start_date": null,
+        "event_end_date": null,
+        "confidence": 0.95,
+        "summary": "..."
+      },
+      {
+        "place_name": null,
+        "region": "대전 중구",
+        "category": "카페",
+        "event_start_date": null,
+        "event_end_date": null,
+        "confidence": 0.3,
+        "summary": "..."
+      }
+    ]
   }
 }
 ```
