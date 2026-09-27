@@ -3,3 +3,4 @@
 from app.api import analyze_video  # noqa: F401
 from app.api import embed_places  # noqa: F401
 from app.api import extract  # noqa: F401
+from app.api import verify_place  # noqa: F401
