@@ -5,7 +5,7 @@ from app.schemas.embed_places import EmbedPlacesRequest, EmbedPlacesResponse
 from app.services.embed_places import embed_places as run_embedding
 
 
-@router.post("/embed-places", response_model=EmbedPlacesResponse)
+@router.post("/v1/embed-places", response_model=EmbedPlacesResponse)
 async def embed_places(req: EmbedPlacesRequest) -> EmbedPlacesResponse:
     data = await run_embedding(req)
     return EmbedPlacesResponse(message="embed_success", data=data)

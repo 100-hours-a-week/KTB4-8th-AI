@@ -12,7 +12,7 @@ from app.prompts.loader import load_prompt
 from app.schemas.extract import ExtractData, ExtractRequest, ExtractResponse
 from app.services.slot_merge import merge_slots
 
-@router.post("/extract")
+@router.post("/v1/extract")
 async def extract(request: ExtractRequest) -> ExtractResponse:
     prompt = load_prompt(
         "extract",
