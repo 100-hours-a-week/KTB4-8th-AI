@@ -1,0 +1,12 @@
+.git
+.github
+.vscode
+.venv
+.env
+.env.*
+chroma/
+**/__pycache__
+.pytest_cache
+.ruff_cache
+docs
+tests
