@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     # 안 보내도 되고, 운영에서는 인프라가 환경변수로 주입한다.
     SENTRY_DSN: str | None = None
 
+    # LangSmith 추적. .env 에는 키만 두면 된다 — 키가 있으면 켜지고, 없으면
+    # 조용히 꺼진다. 끄고 싶을 때만 LANGSMITH_TRACING=false. 운영은 인프라가
+    # LANGSMITH_PROJECT 를 덮어써 로컬 기록과 섞이지 않게 한다.
+    LANGSMITH_API_KEY: str | None = None
+    LANGSMITH_TRACING: bool = True
+    LANGSMITH_PROJECT: str = "keepgo_local"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -1,3 +1,5 @@
+import os
+
 import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -14,6 +16,24 @@ from app.schemas.common import APIResponse
 # 필요 없는 정보다.
 if settings.SENTRY_DSN:
     sentry_sdk.init(dsn=settings.SENTRY_DSN, send_default_pii=False)
+
+
+def enable_langsmith() -> bool:
+    """키가 있으면 LangSmith 추적을 켠다.
+
+    langsmith 는 config 가 아니라 프로세스 환경변수만 읽는다. pydantic-settings 는
+    .env 를 설정값으로만 읽고 환경변수로 올리지 않으므로 여기서 옮겨 준다 —
+    이게 없으면 로컬에서 --env-file 없이 띄울 때 추적이 꺼져 있었다.
+    """
+    if not (settings.LANGSMITH_API_KEY and settings.LANGSMITH_TRACING):
+        return False
+    os.environ["LANGSMITH_TRACING"] = "true"
+    os.environ["LANGSMITH_API_KEY"] = settings.LANGSMITH_API_KEY
+    os.environ["LANGSMITH_PROJECT"] = settings.LANGSMITH_PROJECT
+    return True
+
+
+enable_langsmith()
 
 app = FastAPI()
 
