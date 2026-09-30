@@ -47,3 +47,30 @@ def upsert_places(
             {"place_id": pid, "place_name": name} for pid, name in zip(ids, place_names)
         ],
     )
+
+
+def get_embeddings(place_ids: list[str]) -> list[list[float]]:
+    """저장된 장소 벡터를 꺼낸다. 없는 id 는 조용히 빠진다(취향 벡터 계산용)."""
+    if not place_ids:
+        return []
+    result = _collection().get(ids=place_ids, include=["embeddings"])
+    embeddings = result.get("embeddings")
+    return [list(v) for v in embeddings] if embeddings is not None else []
+
+
+def search_places(query_vector: list[float], place_ids: list[str], n_results: int) -> list[str]:
+    """place_ids 범위 안에서 query_vector 와 가까운 순으로 place_id 를 돌려준다.
+
+    범위를 백엔드가 준 후보로 한정하므로, 삭제된 장소의 벡터가 남아 있어도
+    결과에 나오지 않는다(docs/1 2-7). 아직 임베딩되지 않은 후보는 결과에서
+    빠지니 호출부가 따로 챙긴다.
+    """
+    if not place_ids:
+        return []
+    result = _collection().query(
+        query_embeddings=[query_vector],
+        where={"place_id": {"$in": place_ids}},
+        n_results=n_results,
+    )
+    return result["ids"][0] if result["ids"] else []
+

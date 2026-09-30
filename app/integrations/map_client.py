@@ -65,3 +65,49 @@ async def geocode(address: str) -> tuple[float, float] | None:
     # 여러 결과가 나오는 경우는 드물다.
     first = addresses[0]
     return float(first["y"]), float(first["x"])
+
+
+# 자동차 길찾기 (네이버 Directions 5).
+# API: GET {NAVER_MAP_BASE_URL}/map-direction/v1/driving?start=<경도,위도>&goal=<경도,위도>
+#      응답 code 0 = 성공, route.<option>[0].summary.duration 은 밀리초
+_DIRECTIONS_PATH = "/map-direction/v1/driving"
+_DIRECTIONS_OPTION = "trafast"
+
+
+async def driving_minutes(start: tuple[float, float], goal: tuple[float, float]) -> int | None:
+    """(위도, 경도) 두 지점 사이 자동차 이동 시간(분). 경로가 없으면 None.
+
+    geocode 와 같은 기준으로, 경로를 못 찾은 것(출발·도착이 도로에서 멀거나
+    같은 지점, code != 0)은 None 을 돌려 호출부가 추정치를 쓰게 하고, 벤더
+    장애는 MapAPIError 로 올린다.
+    """
+    if not (settings.NAVER_MAP_CLIENT_ID and settings.NAVER_MAP_CLIENT_SECRET):
+        raise MapAPIError(
+            "지도 API 키가 없습니다 — .env 에 NAVER_MAP_CLIENT_ID, NAVER_MAP_CLIENT_SECRET 를 넣어주세요"
+        )
+
+    headers = {
+        "x-ncp-apigw-api-key-id": settings.NAVER_MAP_CLIENT_ID,
+        "x-ncp-apigw-api-key": settings.NAVER_MAP_CLIENT_SECRET,
+        "Accept": "application/json",
+    }
+    params = {
+        "start": f"{start[1]},{start[0]}",
+        "goal": f"{goal[1]},{goal[0]}",
+        "option": _DIRECTIONS_OPTION,
+    }
+    try:
+        async with _new_client() as client:
+            response = await client.get(_DIRECTIONS_PATH, params=params, headers=headers)
+    except httpx.HTTPError as exc:
+        raise MapAPIError(f"지도 API 호출 실패: {type(exc).__name__}: {exc}") from exc
+
+    if response.status_code != 200:
+        raise MapAPIError(f"지도 API HTTP {response.status_code}: {response.text[:200]}")
+
+    body = response.json()
+    if body.get("code") != 0:
+        return None
+
+    summary = body["route"][_DIRECTIONS_OPTION][0]["summary"]
+    return max(1, round(summary["duration"] / 60000))
