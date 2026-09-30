@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     # 아니며, 유실되어도 재생성할 수 있다(docs/3). .gitignore 대상.
     CHROMA_PATH: str = "./chroma"
 
+    # 에러 수집(Sentry). 비어 있으면 Sentry 를 켜지 않는다 — 로컬·테스트에서는
+    # 안 보내도 되고, 운영에서는 인프라가 환경변수로 주입한다.
+    SENTRY_DSN: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

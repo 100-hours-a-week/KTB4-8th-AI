@@ -4,7 +4,6 @@ from fastapi import APIRouter
 # 버전과 무관한 운영용 /health 가 이 라우터 하나에 같이 붙기 때문.
 router = APIRouter()
 
-
 # 인프라 헬스체크용
 @router.get("/health")
 def health():
