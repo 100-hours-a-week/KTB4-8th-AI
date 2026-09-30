@@ -12,6 +12,23 @@ class Settings(BaseSettings):
     TIMEOUT_EXTRACT: int = 30
     TIMEOUT_EMBED_PLACES: int = 60
 
+    # recommend-courses 는 챗봇 화면의 동기 경로라 전체 15초 deadline 안에서
+    # 구간별 예산을 나눠 쓴다(docs/6 5-3). 예산을 넘긴 구간은 실패 대신 LLM 을
+    # 쓰지 않는 폴백으로 넘어간다(docs/6 5-6).
+    # 고정 분할이 아니라 "남은 시간"에서 떼어 준다 — gemini-3.8-flash 실측이
+    # 재순위 4~5초·조합 5초라, 고정 4/5초로 자르면 거의 항상 폴백이 됐다.
+    TIMEOUT_RECOMMEND_COURSES: float = 15.0
+    RECOMMEND_BUDGET_RETRIEVAL: float = 1.5  # 쿼리 임베딩 + Chroma 검색, 상한
+    RECOMMEND_BUDGET_RERANK: float = 6.5  # 상한. 조합 몫을 남기도록 더 줄어들 수 있다
+    RECOMMEND_BUDGET_MAP: float = 3.0  # 상한. 남은 시간이 적으면 줄어든다
+    # 남은 시간이 이보다 적으면 LLM 을 부르지 않고 바로 폴백한다
+    RECOMMEND_MIN_LLM_SECONDS: float = 2.0
+    # 코스 추천 호출의 thinking 토큰 상한. gemini-3.8-flash 재순위 실측(각 3회):
+    # 기본 평균 5.8초 → 512 로 3.8초, 휴무 판단 정확도는 같았다. 0 은 효과 없음.
+    RECOMMEND_THINKING_BUDGET: int = 512
+    # 벡터 검색으로 압축한 뒤 LLM 에 넘길 후보 수
+    RECOMMEND_TOP_K: int = 15
+
     # 배치 분석: Gemini 호출 1번에 영상 몇 개를 넣을지. Gemini 2.5 이상은
     # 요청당 최대 10개라 이보다 크게는 못 한다 — 품질을 보고 줄이는 것만 가능.
     ANALYZE_VIDEO_BATCH_SIZE: int = 10
