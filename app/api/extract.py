@@ -1,19 +1,27 @@
 #슬롯 추출 엔드포인트
 import asyncio
 
+from fastapi import Request
 from google.genai.errors import APIError
 from pydantic import ValidationError
 
 from app.api.router import router
 from app.core.config import settings
 from app.core.exceptions import LLMInvalidResponseError, LLMRateLimitedError, LLMTimeoutError
+from app.core.logging import logger
 from app.models.factory import get_llm
 from app.prompts.loader import load_prompt
 from app.schemas.extract import ExtractData, ExtractRequest, ExtractResponse
 from app.services.slot_merge import merge_slots
 
 @router.post("/v1/extract")
-async def extract(request: ExtractRequest) -> ExtractResponse:
+async def extract(request: ExtractRequest, http_request: Request = None) -> ExtractResponse:
+    # 백엔드가 보낸 원본(raw)과 파싱 후 값(used)을 같이 남긴다. Slots 는 모르는 키를
+    # 조용히 버려서, 키 이름이 다르면 used 만으로는 "전부 null"로만 보인다.
+    raw = (await http_request.json()).get("prev_slot") if http_request else None
+    logger.info("extract prev_slot raw=%s used=%s prev_query=%r",
+                raw, request.prev_slot.model_dump_json(), request.prev_query)
+
     prompt = load_prompt(
         "extract",
         chat=request.chat,
