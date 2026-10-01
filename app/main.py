@@ -30,6 +30,8 @@ def enable_langsmith() -> bool:
     os.environ["LANGSMITH_TRACING"] = "true"
     os.environ["LANGSMITH_API_KEY"] = settings.LANGSMITH_API_KEY
     os.environ["LANGSMITH_PROJECT"] = settings.LANGSMITH_PROJECT
+    if settings.LANGSMITH_WORKSPACE_ID:
+        os.environ["LANGSMITH_WORKSPACE_ID"] = settings.LANGSMITH_WORKSPACE_ID
     return True
 
 

@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     LANGSMITH_API_KEY: str | None = None
     LANGSMITH_TRACING: bool = True
     LANGSMITH_PROJECT: str = "keepgo_local"
+    # 서비스 키(lsv2_sk_)는 워크스페이스를 지정해야 한다 — 없으면 trace 가
+    # 403 으로 거부되는데 API 응답은 정상이라 티가 안 난다. 개인 키(lsv2_pt_)는 비워 둔다.
+    LANGSMITH_WORKSPACE_ID: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
