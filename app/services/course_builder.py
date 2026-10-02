@@ -58,8 +58,14 @@ def coord(c: RecommendCandidate) -> LatLng:
     return c.lat, c.lng
 
 
-def default_stay(category: str | None) -> int:
-    return _STAY_BY_CATEGORY.get(category or "", DEFAULT_STAY_MINUTES)
+def default_stay(categories: list[str] | None) -> int:
+    """모델이 체류 시간을 안 줬을 때(조합 실패·0분) 쓰는 기본값.
+
+    후보(RecommendCandidate)에는 장소별 카테고리가 없어서 요청의 카테고리 목록만
+    보고 정한다. None·[] 는 카테고리 조건이 없는 요청이다.
+    """
+    # TODO(human): 카테고리가 여러 개일 때 기본 체류 시간을 정한다.
+    return DEFAULT_STAY_MINUTES
 
 
 def order_by_distance(picks: list[Pick], origin: LatLng | None) -> list[Pick]:

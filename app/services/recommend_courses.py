@@ -126,6 +126,11 @@ def _or_unknown(value) -> str:
     return str(value) if value else "모름"
 
 
+def _categories(req: RecommendCoursesRequest) -> str:
+    """프롬프트·템플릿 제목용. 빈 목록([])은 "상관없음"이라 모름과 같게 다룬다."""
+    return ", ".join(req.category) if req.category else ""
+
+
 async def _structured(stage: str, prompt: str, schema: type[BaseModel], budget: float) -> BaseModel:
     # factory 의 공용 인스턴스는 그대로 두고 이 엔드포인트에서만 thinking 을 줄인다.
     llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
@@ -163,7 +168,7 @@ async def _rerank(
     prompt = load_prompt(
         "recommend_rerank",
         query=req.query or "없음",
-        category=_or_unknown(req.category),
+        category=_categories(req) or "모름",
         datetime=_or_unknown(req.datetime),
         candidates="\n".join(
             f"- {c.place_id} | {c.place_name} | {c.business_hours} | {c.summary}" for c in candidates
@@ -199,7 +204,7 @@ async def _compose(
     prompt = load_prompt(
         "recommend_compose",
         query=req.query or "없음",
-        category=_or_unknown(req.category),
+        category=_categories(req) or "모름",
         datetime=_or_unknown(req.datetime),
         available_time=f"{req.available_time}분" if req.available_time else "제한 없음",
         max_courses=cb.MAX_COURSES,
@@ -238,7 +243,7 @@ def _rule_based(req: RecommendCoursesRequest, ranked: list[RecommendCandidate]) 
     groups = cb.rule_based_groups(ranked, stay, _available_minutes(req))
     return [
         (
-            cb.template_title(group[0].place_name, req.query, req.category),
+            cb.template_title(group[0].place_name, req.query, _categories(req)),
             [cb.Pick(c, stay, "요청 조건과 유사도가 높은 장소") for c in group],
         )
         for group in groups
