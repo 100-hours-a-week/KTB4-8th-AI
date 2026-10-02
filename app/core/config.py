@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     RECOMMEND_THINKING_BUDGET: int = 512
     # 벡터 검색으로 압축한 뒤 LLM 에 넘길 후보 수
     RECOMMEND_TOP_K: int = 15
+    # candidates 가 비어 있을 때 쓰는 웹검색 추천(임시, recommend_web.py)의 전체 제한 시간.
+    # 그라운딩 검색이 10~30초 걸려 15초 deadline 과 따로 둔다.
+    TIMEOUT_RECOMMEND_WEB: float = 40.0
 
     # 배치 분석: Gemini 호출 1번에 영상 몇 개를 넣을지. Gemini 2.5 이상은
     # 요청당 최대 10개라 이보다 크게는 못 한다 — 품질을 보고 줄이는 것만 가능.
