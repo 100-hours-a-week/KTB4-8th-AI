@@ -20,8 +20,9 @@ class RecommendCandidate(BaseModel):
     place_id: str = Field(..., description="장소 식별자")
     place_name: str = Field(..., description="장소명")
     summary: str = Field(..., description="장소 특징 요약")
-    lat: float = Field(..., description="위도")
-    lng: float = Field(..., description="경도")
+    # 임시: BE가 장소 좌표를 아직 모으지 못해 비워 보낼 수 있다. 없으면 이동시간 없이 코스를 만든다.
+    lat: Optional[float] = Field(default=None, description="위도 (없으면 이동시간 계산 생략)")
+    lng: Optional[float] = Field(default=None, description="경도 (없으면 이동시간 계산 생략)")
     business_hours: str = Field(..., description="영업시간 (원문 문자열)")
 
 
