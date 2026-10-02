@@ -1,7 +1,7 @@
 # =========================================================
 # AI Server Dockerfile
 # - Python 3.13 / uv / FastAPI + Uvicorn
-# - container port: 8000, entrypoint: app.main:app
+# - container port: 8000 (API), 9464 (metrics), entrypoint: app.main:app
 # - health: GET /health
 # - 쓰기 경로: /app/chroma (임베디드 Chroma, 호스트에 보존)
 # =========================================================
@@ -45,6 +45,7 @@ RUN mkdir -p /app/chroma && chown appuser:appuser /app/chroma
 
 USER appuser
 
-EXPOSE 8000
+# 8000: API, 9464: Prometheus 지표(문서용 — 실제 게시는 Cloud Compose 가 한다)
+EXPOSE 8000 9464
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-graceful-shutdown", "20"]

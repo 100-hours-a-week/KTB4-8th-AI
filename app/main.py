@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI, Request
@@ -9,6 +10,7 @@ from app.api.router import router
 from app.core.config import settings
 from app.core.exceptions import AIServerError
 from app.core.logging import logger
+from app.core.metrics import MetricsMiddleware, start_metrics_server
 from app.schemas.common import APIResponse
 
 # FastAPI 앱을 만들기 전에 초기화해야 FastAPI 통합이 자동으로 붙는다(Sentry 문서).
@@ -37,7 +39,17 @@ def enable_langsmith() -> bool:
 
 enable_langsmith()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    metrics_server = start_metrics_server(settings.METRICS_PORT)
+    yield
+    if metrics_server:
+        metrics_server.shutdown()
+
+
+app = FastAPI(lifespan=lifespan)
+app.add_middleware(MetricsMiddleware)
 
 
 # 응답은 명세대로 message·data 만 보낸다. 원인 파악용 상세는 로그로.

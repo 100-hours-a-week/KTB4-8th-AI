@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # 안 보내도 되고, 운영에서는 인프라가 환경변수로 주입한다.
     SENTRY_DSN: str | None = None
 
+    # Prometheus 지표 전용 포트(app/core/metrics.py). API 포트와 분리해 이 포트만
+    # 모니터링 서버에 연다. 0 이면 띄우지 않는다 — 로컬에서 여러 개 띄울 때 충돌 방지.
+    METRICS_PORT: int = 9464
+
     # LangSmith 추적. .env 에는 키만 두면 된다 — 키가 있으면 켜지고, 없으면
     # 조용히 꺼진다. 끄고 싶을 때만 LANGSMITH_TRACING=false. 운영은 인프라가
     # LANGSMITH_PROJECT 를 덮어써 로컬 기록과 섞이지 않게 한다.
