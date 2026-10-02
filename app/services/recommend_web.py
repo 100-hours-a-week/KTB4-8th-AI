@@ -52,6 +52,11 @@ def _or_unknown(value) -> str:
     return str(value) if value else "모름"
 
 
+def _fast_llm():
+    # 검색·구조화 모두 thinking 을 줄인다. 기존 추천 실측에서 기본 5.8초 → 512 로 3.8초였다.
+    return get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
+
+
 def _conditions(req: RecommendCoursesRequest) -> dict:
     return {
         "region": _or_unknown(req.region),
@@ -60,19 +65,20 @@ def _conditions(req: RecommendCoursesRequest) -> dict:
         "category": ", ".join(req.category) if req.category else "상관없음",
         "query": req.query.strip() or "없음",
         "origin": f"위도 {req.origin.lat:.5f}, 경도 {req.origin.lng:.5f}" if req.origin else "모름",
-        "max_courses": cb.MAX_COURSES,
-        "max_places": cb.MAX_PLACES_PER_COURSE,
+        "max_courses": settings.RECOMMEND_WEB_MAX_COURSES,
+        "max_places": settings.RECOMMEND_WEB_MAX_PLACES,
     }
 
 
 async def _search(req: RecommendCoursesRequest) -> str:
     """1단계: 그라운딩으로 웹검색해 코스를 자유 서술로 받는다."""
     prompt = load_prompt("recommend_web_search", **_conditions(req))
-    llm = get_llm().bind_tools([_SEARCH_TOOL])
+    llm = _fast_llm().bind_tools([_SEARCH_TOOL])
     started = time.perf_counter()
     try:
         message = await llm.ainvoke(prompt)
-    except Exception as exc:
+    except BaseException as exc:
+        # 제한 시간에 걸려 취소(CancelledError)돼도 걸린 시간을 남긴다.
         log_llm(f"{_ENDPOINT}:search", settings.GOOGLE_MODEL,
                 time.perf_counter() - started, success=False, detail=repr(exc))
         raise
@@ -83,12 +89,11 @@ async def _search(req: RecommendCoursesRequest) -> str:
 async def _structure(req: RecommendCoursesRequest, search_result: str) -> WebCoursesLLM:
     """2단계: 1단계 결과를 형식에 옮긴다. 검색 도구는 쓰지 않는다."""
     prompt = load_prompt("recommend_web_structure", search_result=search_result, **_conditions(req))
-    llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
-    chain = llm.with_structured_output(WebCoursesLLM, method="json_schema", include_raw=True)
+    chain = _fast_llm().with_structured_output(WebCoursesLLM, method="json_schema", include_raw=True)
     started = time.perf_counter()
     try:
         result = await chain.ainvoke(prompt)
-    except Exception as exc:
+    except BaseException as exc:
         log_llm(f"{_ENDPOINT}:structure", settings.GOOGLE_MODEL,
                 time.perf_counter() - started, success=False, detail=repr(exc))
         raise
@@ -109,8 +114,8 @@ def to_courses(req: RecommendCoursesRequest, parsed: WebCoursesLLM) -> Recommend
     """
     available = int(req.available_time) if req.available_time else None
     courses = []
-    for ci, course in enumerate(parsed.courses[: cb.MAX_COURSES]):
-        places = [p for p in course.places if p.place_name.strip()][: cb.MAX_PLACES_PER_COURSE]
+    for ci, course in enumerate(parsed.courses[: settings.RECOMMEND_WEB_MAX_COURSES]):
+        places = [p for p in course.places if p.place_name.strip()][: settings.RECOMMEND_WEB_MAX_PLACES]
         picks = [
             cb.Pick(
                 RecommendCandidate(

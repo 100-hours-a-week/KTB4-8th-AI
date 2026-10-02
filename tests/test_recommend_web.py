@@ -106,3 +106,15 @@ def test_candidates_present_do_not_use_web(monkeypatch):
     run(recommend_courses.recommend_courses(req))
 
     assert calls == []
+
+
+def test_web_courses_are_capped(monkeypatch):
+    parsed = WebCoursesLLM(courses=[
+        WebCourseLLM(title=f"코스{c}", places=[place(f"{c}-{i}", 0, 20) for i in range(4)]) for c in range(3)
+    ])
+    fake_web(monkeypatch, parsed)
+
+    data = run(recommend_courses.recommend_courses(RecommendCoursesRequest.model_validate(WEB_REQUEST)))
+
+    assert len(data.courses) == 2
+    assert all(len(c.places) == 3 for c in data.courses)
