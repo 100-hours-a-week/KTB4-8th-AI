@@ -31,13 +31,13 @@ class ExtractRequest(BaseModel):
     chat: str = Field(..., description="사용자 발화")
     date: date_type = Field(..., description="오늘 날짜 (상대 표현 변환 기준)")
     prev_slot: Slots = Field(..., description="이전 턴까지 채워진 슬롯 상태")
-    prev_query: Optional[str] = Field(default=None, description="이전 턴까지의 정성 조건")
+    prev_query: Optional[str] = Field(default=None, description="이전 턴까지의 정성 조건 및 시간")
 
 
 class ExtractData(BaseModel):
     """슬롯 추출 결과 모델"""
     slot: Slots = Field(..., description="누적 갱신된 슬롯 값")
-    query: str = Field(..., description="정성 조건")
+    query: str = Field(..., description="정성 조건 및 시간")
     bot_message: str = Field(..., description="사용자에게 보여줄 응답 문구")
 
 
