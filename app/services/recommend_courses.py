@@ -353,11 +353,15 @@ async def _recommend_from_web(req: RecommendCoursesRequest) -> RecommendCoursesD
 
     실패하거나 시간을 넘기면 후보가 없을 때의 기존 응답처럼 빈 코스를 돌려준다.
     """
+    started = time.perf_counter()
     try:
-        return await asyncio.wait_for(recommend_web.recommend(req), timeout=settings.TIMEOUT_RECOMMEND_WEB)
+        data = await asyncio.wait_for(recommend_web.recommend(req), timeout=settings.TIMEOUT_RECOMMEND_WEB)
     except Exception as exc:
-        logger.warning("%s 웹검색 추천 실패, 빈 코스로 응답: %r", _ENDPOINT, exc)
+        logger.warning("%s 웹검색 추천 실패 %.1fs, 빈 코스로 응답: %r",
+                       _ENDPOINT, time.perf_counter() - started, exc)
         return RecommendCoursesData(courses=[])
+    logger.info("%s 웹검색 추천 %.1fs, 코스 %d개", _ENDPOINT, time.perf_counter() - started, len(data.courses))
+    return data
 
 
 # ── 중단 ───────────────────────────────────────────────────────────────

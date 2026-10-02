@@ -29,8 +29,12 @@ class Settings(BaseSettings):
     # 벡터 검색으로 압축한 뒤 LLM 에 넘길 후보 수
     RECOMMEND_TOP_K: int = 15
     # candidates 가 비어 있을 때 쓰는 웹검색 추천(임시, recommend_web.py)의 전체 제한 시간.
-    # 그라운딩 검색이 10~30초 걸려 15초 deadline 과 따로 둔다.
-    TIMEOUT_RECOMMEND_WEB: float = 40.0
+    # 그라운딩 검색이 길어 15초 deadline 과 따로 둔다. 40초에서 운영 첫 호출이 끊겨(2026-10-03)
+    # 늘렸다. 백엔드 AI 클라이언트 read timeout(130초)·FE nginx(120초)보다 짧아야 한다.
+    TIMEOUT_RECOMMEND_WEB: float = 90.0
+    # 웹검색 추천의 코스 수·코스당 장소 수. 적을수록 검색이 줄어 빨라진다.
+    RECOMMEND_WEB_MAX_COURSES: int = 2
+    RECOMMEND_WEB_MAX_PLACES: int = 3
 
     # 배치 분석: Gemini 호출 1번에 영상 몇 개를 넣을지. Gemini 2.5 이상은
     # 요청당 최대 10개라 이보다 크게는 못 한다 — 품질을 보고 줄이는 것만 가능.
