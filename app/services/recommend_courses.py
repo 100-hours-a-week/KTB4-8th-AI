@@ -210,7 +210,7 @@ async def _compose(
         max_courses=cb.MAX_COURSES,
         max_places=cb.MAX_PLACES_PER_COURSE,
         candidates="\n".join(
-            f"- {c.place_id} | {c.place_name} | {c.business_hours} | {c.summary} | ({c.lat:.5f}, {c.lng:.5f})"
+            f"- {c.place_id} | {c.place_name} | {c.business_hours} | {c.summary} | {_coord_text(c)}"
             for c in ranked
         ),
     )
@@ -282,6 +282,10 @@ async def _travel_times(
 
 
 # ── 조립 ───────────────────────────────────────────────────────────────
+
+
+def _coord_text(c: RecommendCandidate) -> str:
+    return f"({c.lat:.5f}, {c.lng:.5f})" if cb.coord(c) is not None else "(좌표 없음)"
 
 
 def _available_minutes(req: RecommendCoursesRequest) -> int | None:
