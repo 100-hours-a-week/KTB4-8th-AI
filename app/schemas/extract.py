@@ -23,7 +23,7 @@ class Slots(BaseModel):
     region: Optional[str] = Field(default=None, description="지역")
     datetime: VisitDatetime = None
     available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
-    category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
+    category: Optional[list[PlaceCategory]] = Field(default=None, description="카테고리 목록. null 은 이번 턴에서 다루지 않음, [] 는 상관없음")
 
 
 class ExtractRequest(BaseModel):

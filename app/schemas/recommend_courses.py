@@ -38,7 +38,7 @@ class RecommendCoursesRequest(BaseModel):
     candidates: list[RecommendCandidate] = Field(..., max_length=50, description="백엔드가 좌표 반경으로 1차 필터링한 후보 목록 (최대 50개)")
     history_place_ids: list[HistoryPlace] = Field(default_factory=list, max_length=50, description="최근 저장한 장소 목록, 취향 벡터 계산용 (최대 50개). 비어있으면 query만으로 검색")
     available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
-    category: Optional[PlaceCategory] = Field(default=None, description="카테고리")
+    category: Optional[list[PlaceCategory]] = Field(default=None, description="카테고리 목록 (extract 의 slot.category 그대로)")
     datetime: VisitDatetime = None
     origin: Optional[Coordinate] = Field(default=None, description="출발지 좌표 (첫 장소까지의 이동 시간 계산 기준)")
 

@@ -15,9 +15,3 @@ from app.services.analyze_video import analyze_videos as run_batch
 async def analyze_video(req: AnalyzeVideoRequest) -> AnalyzeVideoResponse:
     data = await run_analysis(req)
     return AnalyzeVideoResponse(message="analyze_success", data=data)
-
-
-@router.post("/v1/analyze-videos", response_model=AnalyzeVideosResponse)
-async def analyze_videos(req: AnalyzeVideosRequest) -> AnalyzeVideosResponse:
-    data = await run_batch(req)
-    return AnalyzeVideosResponse(message="analyze_success", data=data)
