@@ -17,13 +17,13 @@ disable_created_metrics()
 HTTP_BUCKETS = (0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 300)
 
 # 완료까지 기다리는 동기 AI 생성 경로. 나머지는 interactive 다. 스트리밍 경로는 없다.
+# embed-places 는 생성이 아니라 임베딩 저장 후 결과만 알리는 짧은 호출이라 interactive 다.
 GENERATION_ROUTES = frozenset(
     {
         "/v1/analyze-video",
         "/v1/extract",
         "/v1/verify-place",
         "/v1/recommend-courses",
-        "/v1/embed-places",
     }
 )
 # 인프라 헬스체크는 요청량·오류율에 섞지 않는다.

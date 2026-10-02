@@ -20,6 +20,7 @@ from app.main import app
 from app.services import recommend_courses
 
 CANCEL_ROUTE = "/v1/recommend-courses/{request_id}/cancel"
+INTERACTIVE_ROUTES = {CANCEL_ROUTE, "/v1/embed-places"}
 
 
 def count(route, status, method="POST"):
@@ -48,7 +49,8 @@ def test_every_api_route_has_a_deliberate_class():
     # 새 엔드포인트가 생기면 GENERATION_ROUTES 에 넣을지 정하도록 여기서 깨진다.
     # FastAPI 0.141 은 include_router 한 라우트를 app.routes 에 펼치지 않아 router 에서 읽는다.
     paths = {r.path for r in router.routes if isinstance(r, APIRoute)}
-    assert paths - metrics.EXCLUDED_ROUTES == metrics.GENERATION_ROUTES | {CANCEL_ROUTE}
+    assert paths - metrics.EXCLUDED_ROUTES == metrics.GENERATION_ROUTES | INTERACTIVE_ROUTES
+    assert {metrics.traffic_class(r) for r in INTERACTIVE_ROUTES} == {"interactive"}
 
 
 def test_route_label_is_template_not_request_id(client):
