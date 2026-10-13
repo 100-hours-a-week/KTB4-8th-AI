@@ -2,15 +2,51 @@ from datetime import date
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
+from app.schemas.business_hours import BusinessHours
 from app.schemas.category import PlaceCategory
 from app.schemas.common import APIResponse, ResponseMessage
 
 #요청 스키마
-class AnalyzeVideoRequest(BaseModel):
-    video_url : str = Field(description = "유튜브 쇼츠 영상 url")
+class AnalyzeVideosRequest(BaseModel):
+    video_urls : list[str] = Field(min_length = 1, max_length = 100, description = "유튜브 쇼츠 영상 url 목록")
+
 
 #응답 스키마
-class AnalyzeVideoData(BaseModel):
+VideoStatus = Literal["success", "not_found", "failed"]
+
+
+# 시트: 실패나 not_found 여도 모든 키가 존재하고 값만 null 이다. pydantic 은
+# None 도 키로 내보내므로 따로 할 일은 없다 — 라우트에 response_model_exclude_none
+# 을 걸면 이 약속이 깨진다.
+class VideoAnalysisResult(BaseModel):
+    video_url : str = Field(description = "요청에 들어온 url 그대로")
+    status : VideoStatus = Field(description = "success: 장소 확인 / not_found: 장소를 찾지 못함 / failed: 처리 오류")
+    error : Optional[ResponseMessage] = Field(default = None, description = "failed 일 때 원인 코드 (llm_timeout 등)")
+    place_name : Optional[str] = Field(default = None, description = "검증된 장소명")
+    address : Optional[str] = Field(default = None, description = "도로명 주소")
+    category : Optional[PlaceCategory] = Field(default = None, description = "장소 카테고리")
+    business_hours : Optional[BusinessHours] = Field(default = None, description = "영업시간. 못 찾으면 null")
+    event_start_date : Optional[date] = Field(default = None, description = "행사 시작일")
+    event_end_date : Optional[date] = Field(default = None, description = "행사 종료일")
+    event_period_unresolved : Optional[bool] = Field(default = None, description = "기간 한정 행사인데 종료일을 못 찾았는지")
+    lat : Optional[float] = Field(default = None, description = "위도")
+    lng : Optional[float] = Field(default = None, description = "경도")
+    confidence : Optional[float] = Field(default = None, ge = 0.0, le = 1.0, description = "분석 신뢰도")
+    summary : Optional[str] = Field(default = None, description = "장소 요약 (건물명·층 등 위치 정보 포함)")
+
+
+class AnalyzeVideosData(BaseModel):
+    # 입력 순서와 같다. 백엔드는 인덱스로 요청 url 과 짝지을 수 있다.
+    results : list[VideoAnalysisResult] = Field(description = "영상별 결과. 요청 순서와 같음")
+
+
+AnalyzeVideosResponse = APIResponse[AnalyzeVideosData]
+
+
+# 분석 단계의 중간 결과. 응답으로 바로 나가지 않는다 — 장소 검증을 거쳐
+# VideoAnalysisResult 로 옮겨진다. LLM 전용 필드(screen_text, video_index)를
+# 떼어낸 모양이다.
+class VideoAnalysis(BaseModel):
     place_name : Optional[str] = Field(default = None, description = "영상에 나온 장소 이름")
     region : Optional[str] = Field(default = None, description = "영상에 나온 장소 위치")
     category : PlaceCategory = Field(description = "카페, 팝업, 전시, 맛집, 명소 어디에도 해당하지 않으면 기타로 분류한다")
@@ -18,8 +54,6 @@ class AnalyzeVideoData(BaseModel):
     event_end_date : Optional[date] = Field(default = None, description = "행사 마감일, 팝업/전시 카테고리에서만 값을 채움")
     confidence : float = Field(description = "추출된 장소에 대한 신뢰도", ge = 0.0, le = 1.0)
     summary : Optional[str] = Field(default = None, description = "장소 요약")
-
-AnalyzeVideoResponse = APIResponse[AnalyzeVideoData]
 
 
 # LLM 전용 스키마. 응답으로 나가지 않는다 — 서비스가 to_data() 로 옮기며 버린다.
@@ -42,31 +76,6 @@ class AnalyzeVideoLLM(BaseModel):
     confidence : float = Field(description = "추출된 장소에 대한 신뢰도", ge = 0.0, le = 1.0)
     summary : Optional[str] = Field(default = None, description = "장소 요약")
 
-    def to_data(self) -> AnalyzeVideoData:
-        return AnalyzeVideoData(**self.model_dump(exclude={"screen_text"}))
-
-# ── 배치 분석 (/v1/analyze-videos) ────────────────────────────────────
-
-#요청 스키마
-class AnalyzeVideosRequest(BaseModel):
-    video_urls : list[str] = Field(min_length = 1, max_length = 100, description = "유튜브 쇼츠 영상 url 목록")
-
-
-#응답 스키마
-class VideoAnalysisResult(BaseModel):
-    video_url : str = Field(description = "요청에 들어온 url 그대로")
-    status : Literal["success", "failed"] = Field(description = "이 영상의 분석 성공 여부")
-    result : Optional[AnalyzeVideoData] = Field(default = None, description = "성공 시 분석 결과")
-    error : Optional[ResponseMessage] = Field(default = None, description = "실패 시 원인 코드 (llm_timeout 등)")
-
-
-class AnalyzeVideosData(BaseModel):
-    # 입력 순서와 같다. 백엔드는 인덱스로 요청 url 과 짝지을 수 있다.
-    results : list[VideoAnalysisResult] = Field(description = "영상별 결과. 요청 순서와 같음")
-
-
-AnalyzeVideosResponse = APIResponse[AnalyzeVideosData]
-
 
 # LLM 전용. Gemini 호출 1번에 영상을 여러 개 넣으면 결과가 목록으로 온다.
 class _Indexed(BaseModel):
@@ -77,8 +86,8 @@ class _Indexed(BaseModel):
 # screen_text → place_name … 순이 된다. 번호를 먼저 적게 해야 모델이 "지금
 # 몇 번 영상을 쓰는 중인지" 붙잡고, 영상끼리 정보가 섞이는 걸 줄인다.
 class AnalyzeVideoBatchItemLLM(AnalyzeVideoLLM, _Indexed):
-    def to_data(self) -> AnalyzeVideoData:
-        return AnalyzeVideoData(**self.model_dump(exclude={"screen_text", "video_index"}))
+    def to_data(self) -> VideoAnalysis:
+        return VideoAnalysis(**self.model_dump(exclude={"screen_text", "video_index"}))
 
 
 class AnalyzeVideoBatchLLM(BaseModel):

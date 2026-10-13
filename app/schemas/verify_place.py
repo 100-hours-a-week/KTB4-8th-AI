@@ -1,8 +1,10 @@
 from datetime import date
+from datetime import date as date_type
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from app.schemas.business_hours import BusinessHours, TimeRange, WeeklyHours
 from app.schemas.common import APIResponse
 
 
@@ -19,7 +21,7 @@ class VerifyPlaceRequest(BaseModel):
 class PlaceCandidate(BaseModel):
     place_name : str = Field(description = "검색된 장소명")
     address : str = Field(description = "정규 주소")
-    business_hours : str = Field(description = "영업시간")
+    business_hours : Optional[BusinessHours] = Field(default = None, description = "영업시간. 못 찾으면 null")
     lat : float = Field(description = "위도")
     lng : float = Field(description = "경도")
     event_start_date : Optional[date] = Field(default = None, description = "확정된 행사 시작일 (기간 한정 행사가 아니면 null)")
@@ -35,6 +37,19 @@ class VerifyPlaceData(BaseModel):
 VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 
 
+# LLM 전용. Gemini 구조화 출력이 날짜를 키로 쓰는 dict 를 잘 다루는지
+# 확인하지 않았으므로 목록으로 받고, 코드가 dict 로 바꾼다. 지난 날짜도
+# 코드가 걸러낸다. timezone·estimated 는 모델이 알 필요가 없어 코드가 채운다.
+class ExceptionDayLLM(BaseModel):
+    date : date_type = Field(description = "임시 휴무·단축 영업 날짜")
+    hours : list[TimeRange] = Field(description = "그날 영업 시간대. 휴무면 []")
+
+
+class BusinessHoursLLM(BaseModel):
+    weekly_hours : WeeklyHours = Field(description = "7개 요일 모두. 모르면 null, 휴무면 []")
+    exceptions : list[ExceptionDayLLM] = Field(description = "영업측 공지에서 찾은 임시 휴무·단축 영업일")
+
+
 # LLM 전용. 웹검색 결과를 옮겨 담는 형식이다. 좌표는 LLM 이 아니라 지도 API 가
 # 채운다 — 모델이 적은 위경도는 그럴듯한 숫자를 지어낼 위험이 크다.
 class GroundedPlace(BaseModel):
@@ -45,7 +60,9 @@ class GroundedPlace(BaseModel):
     evidence : str = Field(description = "찾던 장소의 특징 중 무엇이 이 가게에 있는지, 검색 결과의 어디서 확인했는지. 확인 못 했으면 빈 문자열")
     place_name : str = Field(description = "검색으로 확인한 정확한 상호 (지점명 포함)")
     address : str = Field(description = "도로명 주소. 좌표 조회에 그대로 쓰이므로 가능한 한 완전하게")
-    business_hours : str = Field(description = "영업시간 원문. 검색으로 못 찾으면 '확인 불가'")
+    # 기본값을 두지 않는다 — 필수여야 모델이 "객체" 또는 "null"을 직접 적고,
+    # 빠뜨림과 못 찾음이 구분된다(WeeklyHours 와 같은 이유).
+    business_hours : Optional[BusinessHoursLLM] = Field(description = "영업시간. 검색으로 못 찾으면 null")
     event_start_date : Optional[date] = Field(default = None, description = "기간 한정 행사의 시작일. 아니면 null")
     event_end_date : Optional[date] = Field(default = None, description = "기간 한정 행사의 종료일. 아니면 null")
     event_period_unresolved : bool = Field(description = "기간 한정 행사로 보이는데 종료일을 끝내 못 찾았으면 true")

@@ -1,6 +1,5 @@
 from datetime import date
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate
 
 SYSTEM_PROMPT = """\
 너는 유튜브 쇼츠 영상에서 장소 정보를 추출하는 분석기다.
@@ -77,17 +76,6 @@ SYSTEM_PROMPT = """\
 
 장소명을 비웠다면 신뢰도는 0.4를 넘지 않는다.
 """
-
-ANALYZE_VIDEO_PROMPT = ChatPromptTemplate.from_messages(
-    [
-        ("system", SYSTEM_PROMPT),
-        ("human", [
-            {"type": "text", "text": "첨부된 영상을 분석해라."},
-            {"type": "video", "url": "{video_url}"},
-        ]),
-    ]
-)
-
 
 # ── 배치: Gemini 호출 1번에 영상 여러 개 ──────────────────────────────
 
