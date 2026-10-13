@@ -21,3 +21,19 @@ class EmbedPlacesData(BaseModel):
 
 
 EmbedPlacesResponse = APIResponse[EmbedPlacesData]
+
+
+# ── 삭제 (/v1/embed-places/delete) ────────────────────────────────────
+
+#요청 스키마
+class EmbedPlacesDeleteRequest(BaseModel):
+    # 시트: 최대 100개. 없는 id 가 섞여도 에러가 아니다 — 서비스가 걸러낸다.
+    place_ids : list[str] = Field(max_length = 100, description = "삭제할 장소 식별자 목록")
+
+
+#응답 스키마
+class EmbedPlacesDeleteData(BaseModel):
+    deleted_count : int = Field(description = "실제로 삭제된 장소 수 (없던 id 는 세지 않음)")
+
+
+EmbedPlacesDeleteResponse = APIResponse[EmbedPlacesDeleteData]
