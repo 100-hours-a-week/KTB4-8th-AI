@@ -21,6 +21,7 @@ class VerifyPlaceRequest(BaseModel):
 class PlaceCandidate(BaseModel):
     place_name : str = Field(description = "검색된 장소명")
     address : str = Field(description = "정규 주소")
+    location_detail : Optional[str] = Field(default = None, description = "주소에 없는 위치 정보 (건물명·층·가까운 역 출구). 못 찾으면 null")
     business_hours : Optional[BusinessHours] = Field(default = None, description = "영업시간. 못 찾으면 null")
     lat : float = Field(description = "위도")
     lng : float = Field(description = "경도")
@@ -60,6 +61,9 @@ class GroundedPlace(BaseModel):
     evidence : str = Field(description = "찾던 장소의 특징 중 무엇이 이 가게에 있는지, 검색 결과의 어디서 확인했는지. 확인 못 했으면 빈 문자열")
     place_name : str = Field(description = "검색으로 확인한 정확한 상호 (지점명 포함)")
     address : str = Field(description = "도로명 주소. 좌표 조회에 그대로 쓰이므로 가능한 한 완전하게")
+    # business_hours 와 달리 기본값을 둔다 — 빠뜨려도 못 찾음과 똑같이 영상 쪽
+    # 위치로 대신하므로 둘을 구분할 이유가 없다.
+    location_detail : Optional[str] = Field(default = None, description = "주소에 없는 위치 정보: 건물명, 층, 가까운 역 출구. 검색 결과에 없으면 null")
     # 기본값을 두지 않는다 — 필수여야 모델이 "객체" 또는 "null"을 직접 적고,
     # 빠뜨림과 못 찾음이 구분된다(WeeklyHours 와 같은 이유).
     business_hours : Optional[BusinessHoursLLM] = Field(description = "영업시간. 검색으로 못 찾으면 null")
