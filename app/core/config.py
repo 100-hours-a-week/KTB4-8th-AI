@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # 위 묶음 호출을 동시에 몇 개까지 보낼지. 임의 초기값이다 — 30건 부하
     # 테스트(d5-3)로 429 여부를 보고 조정한다.
     ANALYZE_VIDEO_PARALLEL: int = 3
+    # 분석 뒤 장소 검증을 동시에 몇 건까지 보낼지. 검증 1건 = Gemini 2번(검색·구조화)
+    # + 지도 API 라 약 20~28초 걸린다. 10 이면 묶음 하나의 검증이 한 번에 끝난다.
+    # 속도 우선으로 잡은 값이다 — 429 가 보이면 이 값을 낮춘다.
+    VERIFY_PLACE_PARALLEL: int = 10
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"

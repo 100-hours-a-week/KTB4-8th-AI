@@ -23,8 +23,7 @@ flowchart TD
 
 | Method | 엔드포인트 | 기능 |
 | --- | --- | --- |
-| POST | `/v1/analyze-video` | 유튜브 쇼츠 영상 분석 (장소명·지역·카테고리·행사 시작일·종료일 추출) |
-| POST | `/v1/verify-place` | 장소 존재 여부·영업시간 검증 및 좌표 조회 |
+| POST | `/v1/analyze-video` | 유튜브 쇼츠 영상 여러 개를 분석하고 장소 검증까지 수행 (장소명·주소·좌표·영업시간·카테고리·행사 기간) |
 | POST | `/v1/extract` | 사용자 발화에서 슬롯·정성 조건 추출 |
 | POST | `/v1/recommend-courses` | 후보 장소로 코스 조합·방문 순서·도착 시각 생성 |
 | POST | `/v1/embed-places` | 장소 요약을 임베딩해 벡터 DB에 저장 |

@@ -10,6 +10,7 @@ API: GET {NAVER_MAP_BASE_URL}/map-geocode/v2/geocode?query=<주소>
 """
 
 import httpx
+from langsmith import traceable
 
 from app.core.config import settings
 from app.core.exceptions import MapAPIError
@@ -24,6 +25,9 @@ def _new_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(base_url=settings.NAVER_MAP_BASE_URL, timeout=settings.TIMEOUT_MAP_API)
 
 
+# LLM 이 아니라 LangChain 추적에 안 잡힌다. 검증 트리 안에서 지도 API 시간과
+# None(주소 못 찾음) 결과가 보이게 직접 붙인다.
+@traceable(name="geocode", run_type="tool")
 async def geocode(address: str) -> tuple[float, float] | None:
     """주소를 (위도, 경도) 로 바꾼다. 주소를 찾지 못하면 None.
 
