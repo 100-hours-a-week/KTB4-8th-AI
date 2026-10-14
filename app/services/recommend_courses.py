@@ -31,6 +31,7 @@ from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
 from app.retrieval.chroma_store import get_embeddings, search_places
 from app.retrieval.embedder import get_embedder
+from app.schemas.extract import has_visit_time
 from app.schemas.recommend_courses import (
     ComposeLLM,
     Course,
@@ -126,6 +127,16 @@ def _or_unknown(value) -> str:
     return str(value) if value else "모름"
 
 
+def _visit_text(value) -> str:
+    """프롬프트용 방문 일시. 00:00 은 "시간 모름" 약속이라 날짜만 알려 준다 —
+    그대로 넘기면 모델이 자정 방문으로 보고 영업시간을 판단한다."""
+    if value is None:
+        return "모름"
+    if not has_visit_time(value):
+        return f"{value:%Y-%m-%d} (시간 모름)"
+    return f"{value:%Y-%m-%d %H:%M}"
+
+
 def _categories(req: RecommendCoursesRequest) -> str:
     """프롬프트·템플릿 제목용. 빈 목록([])은 "상관없음"이라 모름과 같게 다룬다."""
     return ", ".join(req.category) if req.category else ""
@@ -169,7 +180,7 @@ async def _rerank(
         "recommend_rerank",
         query=req.query or "없음",
         category=_categories(req) or "모름",
-        datetime=_or_unknown(req.datetime),
+        datetime=_visit_text(req.datetime),
         candidates="\n".join(
             f"- {c.place_id} | {c.place_name} | {c.business_hours} | {c.summary}" for c in candidates
         ),
@@ -205,7 +216,7 @@ async def _compose(
         "recommend_compose",
         query=req.query or "없음",
         category=_categories(req) or "모름",
-        datetime=_or_unknown(req.datetime),
+        datetime=_visit_text(req.datetime),
         available_time=f"{req.available_time}분" if req.available_time else "제한 없음",
         max_courses=cb.MAX_COURSES,
         max_places=cb.MAX_PLACES_PER_COURSE,

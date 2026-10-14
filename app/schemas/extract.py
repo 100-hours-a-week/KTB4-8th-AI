@@ -1,4 +1,5 @@
 from datetime import date as date_type
+from datetime import datetime as datetime_type
 from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -8,13 +9,19 @@ from app.schemas.common import APIResponse
 
 AvailableTime = Literal["180", "360", "540"]
 
+# 날짜와 시간을 함께 받는다. datetime 은 시간 칸이 항상 있어서 "시간만 모름"을
+# 따로 표현할 수 없다 — 그래서 00:00 을 "시간 모름"으로 약속한다(백엔드와 합의).
+# 날짜만 들어와도("2026-10-18") 에러 없이 00:00 이 된다. 실제 자정 출발과
+# 구분되지 않는 건 감수했다. 이 서비스에서 자정 출발 코스는 드물다.
 VisitDatetime = Annotated[
-    Optional[str],
-    Field(
-        pattern=r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$",
-        description="날짜·시간대 (YYYY-MM-DD 또는 YYYY-MM-DD HH:MM, 시간을 모르면 날짜만)",
-    ),
+    Optional[datetime_type],
+    Field(description="방문 날짜와 시각. 시각을 모르면 00:00"),
 ]
+
+
+def has_visit_time(value: Optional[datetime_type]) -> bool:
+    """00:00 은 "시간 모름" 약속이라 시각이 없는 것으로 본다."""
+    return value is not None and (value.hour, value.minute) != (0, 0)
 
 
 class Slots(BaseModel):
