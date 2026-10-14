@@ -22,10 +22,12 @@ on:
     branches:
       - 'feature/**'
       - main
+      - develop
 
   pull_request:
     branches:
       - main
+      - develop
     types:
       - opened
       - synchronize
@@ -181,14 +183,17 @@ jobs:
   # ============================================================
 
   main-image:
-    name: Main - Build and Push Image
+    name: ${{ github.ref == 'refs/heads/develop' && 'Dev - Build and Push Image' || 'Main - Build and Push Image' }}
 
-    # main Branch에 Commit이 반영되었을 때만 실행
+    # main은 V1 운영, develop은 V2 개발 이미지 후보를 게시한다.
     if: >
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/main'
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
 
     runs-on: ubuntu-latest
+    concurrency:
+      group: ai-image-${{ github.ref }}
+      cancel-in-progress: true
 
     # contents: read
     #   → Repository Source Checkout
