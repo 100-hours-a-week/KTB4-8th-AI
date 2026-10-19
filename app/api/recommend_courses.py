@@ -4,7 +4,7 @@ from fastapi import Header
 
 from app.api.router import router
 from app.core.exceptions import AIServerError
-from app.core.logging import logger
+from app.core.logging import report_handled_error
 from app.schemas.common import APIResponse
 from app.schemas.recommend_courses import (
     RecommendCoursesData,
@@ -26,8 +26,8 @@ async def recommend_courses(
         data = await service.run_cancellable(x_request_id, service.recommend_courses(req))
     except AIServerError as exc:
         # service.recommend_courses 가 모든 예외를 우리 예외로 바꿔 올린다.
-        logger.error("POST /v1/recommend-courses -> recommend_failed error=%s detail=%s",
-                     exc.error_code, exc.detail)
+        # 공통 처리기를 안 타서 Sentry 자동 수집이 안 되므로 직접 남긴다.
+        report_handled_error("POST /v1/recommend-courses recommend_failed", exc, exc.error_code)
         return RecommendCoursesResponse(
             message="recommend_failed", data=RecommendCoursesData(error=exc.error_code)
         )
