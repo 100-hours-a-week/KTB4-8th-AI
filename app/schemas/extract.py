@@ -2,7 +2,7 @@ from datetime import date as date_type
 from datetime import datetime as datetime_type
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
 from app.schemas.category import PlaceCategory
 from app.schemas.common import APIResponse
@@ -13,9 +13,21 @@ AvailableTime = Literal["180", "360", "540"]
 # 따로 표현할 수 없다 — 그래서 00:00 을 "시간 모름"으로 약속한다(백엔드와 합의).
 # 날짜만 들어와도("2026-10-18") 에러 없이 00:00 이 된다. 실제 자정 출발과
 # 구분되지 않는 건 감수했다. 이 서비스에서 자정 출발 코스는 드물다.
+def _drop_timezone(value: Optional[datetime_type]) -> Optional[datetime_type]:
+    """시간대 표시만 떼고 시각 숫자는 그대로 둔다.
+
+    모든 시각은 한국 시간이다. 그런데 Gemini 가 구조화 출력의 date-time 형식에
+    맞춰 "14:00:00Z" 처럼 UTC 표시를 붙여 왔다(10/19 실측, 프롬프트로 막아도 붙음).
+    그대로 내보내면 백엔드가 UTC 로 보고 한국 시간 23:00 으로 바꿀 수 있다.
+    한국 시간으로 "변환"하면 안 된다 — 모델은 한국 시각을 적고 표시만 잘못 붙였다.
+    """
+    return value.replace(tzinfo=None) if value is not None and value.tzinfo else value
+
+
 VisitDatetime = Annotated[
     Optional[datetime_type],
-    Field(description="방문 날짜와 시각. 시각을 모르면 00:00"),
+    AfterValidator(_drop_timezone),
+    Field(description="방문 날짜와 시각(한국 시간). 시각을 모르면 00:00"),
 ]
 
 
