@@ -12,8 +12,12 @@
 지도 API 장애(MapAPIError)만은 폴백하지 않고 map_api_error(502)로 올린다 —
 verify-place 와 같은 기준이고, API 시트에 이 엔드포인트의 502 가 명시돼 있다.
 
-영업시간·휴무일 판단은 LLM 이 한다(재순위 프롬프트). business_hours 가 자유
-문자열이라 코드로 파싱할 수 없다(docs/1 2-6).
+영업시간·휴무일 판단은 아직 LLM 이 한다(재순위 프롬프트). business_hours 는
+객체로 받지만, 코드로 판정하는 건 다음 작업이다 — 지금은 사람이 읽는 문장으로
+바꿔 프롬프트에 넣는다(_hours_text).
+
+코스 추천도(match_score)는 후보 압축 때 Chroma 가 준 유사도로 계산한다. 압축에
+쓴 벡터(query + 취향)와 같은 기준이라 코스 순서와 점수가 어긋나지 않는다.
 """
 
 import asyncio
@@ -31,6 +35,7 @@ from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
 from app.retrieval.chroma_store import get_embeddings, search_places
 from app.retrieval.embedder import get_embedder
+from app.schemas.business_hours import BusinessHours
 from app.schemas.extract import has_visit_time
 from app.schemas.recommend_courses import (
     ComposeLLM,
@@ -83,7 +88,12 @@ def _combine(query_vec: list[float] | None, taste_vec: list[float] | None) -> li
     return [_QUERY_WEIGHT * a + (1 - _QUERY_WEIGHT) * b for a, b in zip(q, t)]
 
 
-async def _search(req: RecommendCoursesRequest, candidates: list[RecommendCandidate]) -> list[RecommendCandidate]:
+Similarities = dict[str, float]  # place_id → 압축 기준 벡터와의 코사인 유사도
+
+
+async def _search(
+    req: RecommendCoursesRequest, candidates: list[RecommendCandidate]
+) -> tuple[list[RecommendCandidate], Similarities]:
     # 취향 벡터는 저장하지 않고 매번 계산한다 — 장소를 지우면 다음 추천에 바로
     # 반영된다(docs/5 3-3). 이력이 아직 임베딩되지 않았으면 조용히 빠진다.
     history_ids = [h.place_id for h in req.history_place_ids]
@@ -95,29 +105,73 @@ async def _search(req: RecommendCoursesRequest, candidates: list[RecommendCandid
 
     vector = _combine(query_vec, taste_vec)
     if vector is None:
-        return candidates
+        return candidates, {}
 
     by_id = {c.place_id: c for c in candidates}
     found = await asyncio.to_thread(
         search_places, vector, list(by_id), min(settings.RECOMMEND_TOP_K, len(by_id))
     )
-    ranked = [by_id[pid] for pid in found if pid in by_id]
+    sims = {pid: sim for pid, sim in found if pid in by_id}
+    ranked = [by_id[pid] for pid in sims]
 
     # 아직 임베딩되지 않은 후보(저장 직후 등)는 검색에 안 잡힌다. 버리지 않고
-    # 뒤에 붙여 LLM 이 판단하게 한다 — 남는 자리가 있을 때만.
-    missing = [c for c in candidates if c.place_id not in set(found)]
-    return (ranked + missing)[: settings.RECOMMEND_TOP_K]
+    # 뒤에 붙여 LLM 이 판단하게 한다 — 남는 자리가 있을 때만. 이 후보들은
+    # 유사도가 없어서 추천도 계산에서 빠진다.
+    missing = [c for c in candidates if c.place_id not in sims]
+    return (ranked + missing)[: settings.RECOMMEND_TOP_K], sims
 
 
 async def _compress(
     req: RecommendCoursesRequest, candidates: list[RecommendCandidate], deadline: _Deadline
-) -> list[RecommendCandidate]:
+) -> tuple[list[RecommendCandidate], Similarities]:
     budget = min(settings.RECOMMEND_BUDGET_RETRIEVAL, deadline.left())
     try:
         return await asyncio.wait_for(_search(req, candidates), timeout=budget)
     except Exception as exc:
         logger.warning("%s 후보 압축 실패, 요청 순서로 대체: %r", _ENDPOINT, exc)
-        return candidates[: settings.RECOMMEND_TOP_K]
+        return candidates[: settings.RECOMMEND_TOP_K], {}
+
+
+def _match_score(place_ids: list[str], sims: Similarities) -> int | None:
+    """코스 장소들의 유사도 평균을 고정 구간으로 0~100 환산한다.
+
+    유사도가 있는 장소만 평균낸다. 전부 없으면(임베딩 없음, 압축 실패 등) None —
+    0 을 내면 "안 맞음"으로 읽혀 데이터가 없는 경우와 구분되지 않는다.
+    """
+    values = [sims[pid] for pid in place_ids if pid in sims]
+    if not values:
+        return None
+    lo, hi = settings.RECOMMEND_SCORE_SIM_MIN, settings.RECOMMEND_SCORE_SIM_MAX
+    ratio = (sum(values) / len(values) - lo) / (hi - lo)
+    return round(min(1.0, max(0.0, ratio)) * 100)
+
+
+_WEEKDAYS = [("MONDAY", "월"), ("TUESDAY", "화"), ("WEDNESDAY", "수"), ("THURSDAY", "목"),
+             ("FRIDAY", "금"), ("SATURDAY", "토"), ("SUNDAY", "일")]
+
+
+def _ranges_text(ranges) -> str:
+    if ranges is None:
+        return "모름"
+    if not ranges:
+        return "휴무"
+    return ",".join(f"{r.open_time}-{r.close_time}" for r in ranges)
+
+
+def _hours_text(hours: BusinessHours) -> str:
+    """프롬프트용 영업시간 문장. 객체(JSON)를 그대로 넣으면 후보 줄이 길어져서
+    재순위 시간이 늘어난다. 7요일이 같으면 "매일"로 줄인다."""
+    days = [_ranges_text(getattr(hours.weekly_hours, key)) for key, _ in _WEEKDAYS]
+    if len(set(days)) == 1:
+        text = f"매일 {days[0]}"
+    else:
+        text = " ".join(f"{label} {d}" for (_, label), d in zip(_WEEKDAYS, days))
+    if hours.exceptions:
+        extra = " ".join(f"{day} {_ranges_text(r)}" for day, r in sorted(hours.exceptions.items()))
+        text += f" (임시: {extra})"
+    if hours.estimated:
+        text += " (추정)"
+    return text
 
 
 # ── LLM 호출 ───────────────────────────────────────────────────────────
@@ -182,7 +236,7 @@ async def _rerank(
         category=_categories(req) or "모름",
         datetime=_visit_text(req.datetime),
         candidates="\n".join(
-            f"- {c.place_id} | {c.place_name} | {c.business_hours} | {c.summary}" for c in candidates
+            f"- {c.place_id} | {c.place_name} | {_hours_text(c.business_hours)} | {c.summary}" for c in candidates
         ),
     )
     try:
@@ -221,7 +275,7 @@ async def _compose(
         max_courses=cb.MAX_COURSES,
         max_places=cb.MAX_PLACES_PER_COURSE,
         candidates="\n".join(
-            f"- {c.place_id} | {c.place_name} | {c.business_hours} | {c.summary} | ({c.lat:.5f}, {c.lng:.5f})"
+            f"- {c.place_id} | {c.place_name} | {_hours_text(c.business_hours)} | {c.summary} | ({c.lat:.5f}, {c.lng:.5f})"
             for c in ranked
         ),
     )
@@ -310,7 +364,7 @@ async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
         return RecommendCoursesData(courses=[])
 
     deadline = _Deadline(settings.TIMEOUT_RECOMMEND_COURSES - _SAFETY_SECONDS)
-    compressed = await _compress(req, candidates, deadline)
+    compressed, sims = await _compress(req, candidates, deadline)
     ranked = await _rerank(req, compressed, deadline)
     if not ranked:
         return RecommendCoursesData(courses=[])
@@ -336,6 +390,7 @@ async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
         if any(key <= seen for seen in seen_sets):
             continue
         seen_sets.add(key)
+        course.match_score = _match_score([p.place_id for p in course.places], sims)
         courses.append(course)
 
     return RecommendCoursesData(courses=courses[: cb.MAX_COURSES])

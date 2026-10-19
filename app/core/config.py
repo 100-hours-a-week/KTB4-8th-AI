@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     RECOMMEND_THINKING_BUDGET: int = 512
     # 벡터 검색으로 압축한 뒤 LLM 에 넘길 후보 수
     RECOMMEND_TOP_K: int = 15
+    # 코스 추천도(match_score): 코사인 유사도를 이 구간에서 0~100 으로 선형 환산하고
+    # 밖은 0·100 으로 자른다. 유사도는 좁은 구간에 몰려서 그대로 ×100 하면 코스끼리
+    # 차이가 안 난다. 임의 초기값이다 — 실제 유사도 분포를 보고 조정한다.
+    RECOMMEND_SCORE_SIM_MIN: float = 0.5
+    RECOMMEND_SCORE_SIM_MAX: float = 0.9
 
     # 배치 분석: Gemini 호출 1번에 영상 몇 개를 넣을지. Gemini 2.5 이상은
     # 요청당 최대 10개라 이보다 크게는 못 한다 — 품질을 보고 줄이는 것만 가능.
