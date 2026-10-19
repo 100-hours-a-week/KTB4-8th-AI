@@ -27,7 +27,7 @@ async def recommend_courses(
     except AIServerError as exc:
         # service.recommend_courses 가 모든 예외를 우리 예외로 바꿔 올린다.
         # 공통 처리기를 안 타서 Sentry 자동 수집이 안 되므로 직접 남긴다.
-        report_handled_error("POST /v1/recommend-courses recommend_failed", exc, exc.error_code)
+        report_handled_error("POST /v1/recommend-courses recommend_failed", exc.error_code, exc)
         return RecommendCoursesResponse(
             message="recommend_failed", data=RecommendCoursesData(error=exc.error_code)
         )

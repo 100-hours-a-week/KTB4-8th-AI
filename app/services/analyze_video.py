@@ -6,7 +6,7 @@ from langsmith import traceable
 
 from app.core.config import settings
 from app.core.exceptions import AIServerError, InvalidRequestError
-from app.core.logging import log_llm
+from app.core.logging import log_llm, report_handled_error
 from app.models.factory import get_llm, to_domain_error
 from app.prompts.analyze_video import build_batch_messages
 from app.schemas.analyze_video import (
@@ -89,10 +89,17 @@ async def _analyze_group(urls: list[str]) -> list[list[VideoAnalysis] | VideoAna
     by_index: dict[int, list[VideoAnalysis]] = {}
     for item in result["parsed"].results:
         by_index.setdefault(item.video_index, []).append(item.to_data())
-    return [
-        by_index.get(i) or _failed(url, "llm_invalid_response")
-        for i, url in enumerate(urls, start=1)
-    ]
+
+    outcomes: list[list[VideoAnalysis] | VideoAnalysisResult] = []
+    for i, url in enumerate(urls, start=1):
+        if i in by_index:
+            outcomes.append(by_index[i])
+        else:
+            # 호출은 성공했는데 결과에 이 영상이 없다. 응답에만 담으면 아무 데도
+            # 안 남아서 따로 기록한다.
+            report_handled_error(f"{_BATCH_ENDPOINT} video_skipped url={url}", "llm_invalid_response")
+            outcomes.append(_failed(url, "llm_invalid_response"))
+    return outcomes
 
 
 async def _verify(url: str, analysis: VideoAnalysis) -> VideoAnalysisResult:
@@ -115,13 +122,15 @@ async def _verify(url: str, analysis: VideoAnalysis) -> VideoAnalysisResult:
     try:
         async with _VERIFY_SLOTS:
             verified = await verify_place(req)
-    except AIServerError as exc:
+    except Exception as exc:
         # verify_place 는 이미 우리 예외(map_api_error·llm_timeout 등)로 바꿔 던진다.
         # to_domain_error 에 다시 넣으면 타임아웃·429 외엔 전부
-        # internal_server_error 로 뭉개지므로 코드를 그대로 쓴다.
-        return _failed(url, exc.error_code)
-    except Exception as exc:
-        return _failed(url, to_domain_error(exc).error_code)
+        # internal_server_error 로 뭉개지므로 우리 예외면 코드를 그대로 쓴다.
+        code = exc.error_code if isinstance(exc, AIServerError) else to_domain_error(exc).error_code
+        # 영상별 failed 로 응답에만 담기면 아무 데도 안 남는다(검증 타임아웃은
+        # LLM 호출이 취소돼 log_llm 도 안 찍힌다). 그래서 따로 기록한다.
+        report_handled_error(f"{_BATCH_ENDPOINT} verify_failed place={analysis.place_name} url={url}", code, exc)
+        return _failed(url, code)
 
     if not verified.exists or not verified.candidates:
         return _not_found(url)
