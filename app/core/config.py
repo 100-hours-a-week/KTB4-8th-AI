@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    METRICS_PORT: int = 9464
+
     GOOGLE_API_KEY: str
     GOOGLE_MODEL: str = "gemini-3.5-flash-lite"
     LLM_PROVIDER: Literal["google", "local"] = "google"

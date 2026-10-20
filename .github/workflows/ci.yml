@@ -99,6 +99,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Verify metrics and existing API contracts
+        run: uv run --frozen pytest tests/test_metrics.py
+
       # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
       # - name: Ruff lint
       #   run: uv run ruff check .
@@ -151,6 +154,9 @@ jobs:
       # Application / Test / Ruff 실행에 필요한 고정 Dependency 설치
       - name: Install dependencies
         run: uv sync --frozen
+
+      - name: Verify metrics and existing API contracts
+        run: uv run --frozen pytest tests/test_metrics.py
 
       # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
       # - name: Ruff lint
@@ -230,6 +236,9 @@ jobs:
       # uv.lock에 고정된 Dependency 설치
       - name: Install dependencies
         run: uv sync --frozen
+
+      - name: Verify metrics and existing API contracts
+        run: uv run --frozen pytest tests/test_metrics.py
 
       # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
       # - name: Ruff lint

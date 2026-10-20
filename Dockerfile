@@ -45,6 +45,6 @@ RUN mkdir -p /app/chroma && chown appuser:appuser /app/chroma
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8000 9464
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-graceful-shutdown", "20"]
