@@ -22,7 +22,6 @@ GENERATION_ROUTES = frozenset(
     {
         "/v1/analyze-video",
         "/v1/extract",
-        "/v1/verify-place",
         "/v1/recommend-courses",
     }
 )
