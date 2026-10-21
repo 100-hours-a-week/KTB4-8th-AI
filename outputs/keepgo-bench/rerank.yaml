@@ -1,0 +1,1947 @@
+"id": "rr-closed-day-01"
+"endpoint": "rerank"
+"case": "closed-day"
+"source": "synthetic"
+"intent": "주간 영업시간이 빈 배열인 정기 휴무 장소를 제외하는지 확인한다."
+"input":
+  "query": "일요일에 밥 먹고 구경할 곳"
+  "category": null
+  "datetime": "2026-10-25T12:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+---
+"id": "rr-closed-day-02"
+"endpoint": "rerank"
+"case": "closed-day"
+"source": "synthetic"
+"intent": "주간 영업시간이 빈 배열인 정기 휴무 장소를 제외하는지 확인한다."
+"input":
+  "query": "월요일 점심 먹을 곳"
+  "category": null
+  "datetime": "2026-10-19T12:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-38"
+  - "kg-40"
+  - "kg-41"
+---
+"id": "rr-closed-day-03"
+"endpoint": "rerank"
+"case": "closed-day"
+"source": "synthetic"
+"intent": "주간 영업시간이 빈 배열인 정기 휴무 장소를 제외하는지 확인한다."
+"input":
+  "query": "가족이랑 저녁 먹을 곳"
+  "category": null
+  "datetime": "2026-10-25T18:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-36"
+  - "kg-37"
+  - "kg-42"
+---
+"id": "rr-closed-day-04"
+"endpoint": "rerank"
+"case": "closed-day"
+"source": "synthetic"
+"intent": "주간 영업시간이 빈 배열인 정기 휴무 장소를 제외하는지 확인한다."
+"input":
+  "query": "오래된 동네 식당이랑 볼거리"
+  "category": null
+  "datetime": "2026-11-01T13:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+---
+"id": "rr-closed-day-05"
+"endpoint": "rerank"
+"case": "closed-day"
+"source": "synthetic"
+"intent": "월요일 정기 휴무인 식당을 영업 중인 식당과 구분하는지 확인한다."
+"input":
+  "query": "월요일 저녁에 갈 식당"
+  "category":
+  - "맛집"
+  "datetime": "2026-11-02T18:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-40"
+---
+"id": "rr-before-open-01"
+"endpoint": "rerank"
+"case": "before-open"
+"source": "synthetic"
+"intent": "방문 당일 영업 시작 전인 장소를 제외하고 이미 문을 연 장소를 남기는지 확인한다."
+"input":
+  "query": "성수에서 아침 먹고 구경할 곳"
+  "category": null
+  "datetime": "2026-10-20T10:30:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+"expected":
+  "intended_closed":
+  - "kg-02"
+  - "kg-03"
+  - "kg-06"
+  - "kg-19"
+  - "kg-30"
+---
+"id": "rr-before-open-02"
+"endpoint": "rerank"
+"case": "before-open"
+"source": "synthetic"
+"intent": "방문 당일 영업 시작 전인 장소를 제외하고 이미 문을 연 장소를 남기는지 확인한다."
+"input":
+  "query": "아침 일찍 문 연 곳"
+  "category": null
+  "datetime": "2026-10-21T09:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-18"
+---
+"id": "rr-before-open-03"
+"endpoint": "rerank"
+"case": "before-open"
+"source": "synthetic"
+"intent": "방문 당일 영업 시작 전인 장소를 제외하고 이미 문을 연 장소를 남기는지 확인한다."
+"input":
+  "query": "대전에서 이른 식사"
+  "category": null
+  "datetime": "2026-10-22T10:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-40"
+  - "kg-41"
+---
+"id": "rr-before-open-04"
+"endpoint": "rerank"
+"case": "before-open"
+"source": "synthetic"
+"intent": "방문 당일 영업 시작 전인 장소를 제외하고 이미 문을 연 장소를 남기는지 확인한다."
+"input":
+  "query": "점심 전에 소품도 보고 싶어"
+  "category": null
+  "datetime": "2026-10-23T11:00:00"
+  "candidate_ids":
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+"expected":
+  "intended_closed":
+  - "kg-03"
+  - "kg-06"
+  - "kg-30"
+---
+"id": "rr-before-open-05"
+"endpoint": "rerank"
+"case": "before-open"
+"source": "synthetic"
+"intent": "방문 당일 영업 시작 전인 장소를 제외하고 이미 문을 연 장소를 남기는지 확인한다."
+"input":
+  "query": "오전에 동네 한 바퀴 돌 곳"
+  "category": null
+  "datetime": "2026-10-24T09:45:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-18"
+---
+"id": "rr-after-close-01"
+"endpoint": "rerank"
+"case": "after-close"
+"source": "keepgo"
+"intent": "저녁 방문 시 이미 마감한 장소를 제외하는지 확인한다."
+"input":
+  "query": "가성비 좋은"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-09T19:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+---
+"id": "rr-after-close-02"
+"endpoint": "rerank"
+"case": "after-close"
+"source": "synthetic"
+"intent": "일부 장소의 마지막 영업 구간이 끝난 뒤에는 그 장소를 제외하는지 확인한다."
+"input":
+  "query": "늦은 저녁에도 구경할 수 있는 곳"
+  "category": null
+  "datetime": "2026-10-20T21:15:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed":
+  - "kg-03"
+  - "kg-06"
+  - "kg-19"
+  - "kg-30"
+  - "kg-47"
+---
+"id": "rr-after-close-03"
+"endpoint": "rerank"
+"case": "after-close"
+"source": "synthetic"
+"intent": "일부 장소의 마지막 영업 구간이 끝난 뒤에는 그 장소를 제외하는지 확인한다."
+"input":
+  "query": "늦게 밥 먹을 곳"
+  "category": null
+  "datetime": "2026-10-21T20:45:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-36"
+---
+"id": "rr-after-close-04"
+"endpoint": "rerank"
+"case": "after-close"
+"source": "synthetic"
+"intent": "일부 장소의 마지막 영업 구간이 끝난 뒤에는 그 장소를 제외하는지 확인한다."
+"input":
+  "query": "밤에도 열려 있는 매장"
+  "category": null
+  "datetime": "2026-10-22T22:15:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-25"
+  - "kg-30"
+  - "kg-48"
+"expected":
+  "intended_closed":
+  - "kg-02"
+  - "kg-03"
+  - "kg-06"
+  - "kg-07"
+  - "kg-30"
+  - "kg-48"
+---
+"id": "rr-after-close-05"
+"endpoint": "rerank"
+"case": "after-close"
+"source": "synthetic"
+"intent": "일부 장소의 마지막 영업 구간이 끝난 뒤에는 그 장소를 제외하는지 확인한다."
+"input":
+  "query": "저녁에 들를 만한 곳"
+  "category": null
+  "datetime": "2026-10-24T18:30:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-15"
+  - "kg-17"
+---
+"id": "rr-midnight-01"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "금요일에 놀다가 새벽에 밥 먹을 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-24T00:30:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-38"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-02"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "새벽 한 시 넘어서 술 한잔할 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-24T01:15:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-03"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "아직 문 연 포차 찾아줘"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-24T01:45:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-42"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-04"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "토요일 밤 지나서 새벽에 먹을 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-25T00:45:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-38"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-05"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "일요일 새벽에도 갈 수 있는 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-25T01:15:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-06"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "일요일 밤에 놀다가 늦게 먹을 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-26T00:30:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-42"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-07"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "월요일 새벽 한 시 사십오 분에 가능한 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-26T01:45:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-42"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-08"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "월요일 밤 영업이 이어지는 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-27T00:30:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-38"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-09"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "자정 마감한 곳 말고 열린 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-30T00:15:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-38"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-midnight-10"
+"endpoint": "rerank"
+"case": "midnight"
+"source": "synthetic"
+"intent": "전날 시작한 자정 넘김 영업을 반영하고 자정 마감과 다음 날 휴무를 구분하는지 확인한다."
+"input":
+  "query": "새벽 두 시 전 잠깐 들를 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-31T01:50:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-42"
+"note": "시작 시각은 포함하고 마감 시각은 제외한다. 당일 휴무여도 전날 시작한 영업이 남아 있으면 영업 중이다."
+---
+"id": "rr-split-hours-01"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "keepgo"
+"intent": "점심 영업 구간 안에 있는 식당을 영업 중으로 판단하는지 확인한다."
+"input":
+  "query": "맛있는"
+  "category": null
+  "datetime": "2026-10-03T12:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+"expected":
+  "intended_closed":
+  - "kg-35"
+  - "kg-41"
+---
+"id": "rr-split-hours-02"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "성수에서 늦은 점심 먹고 구경할 곳"
+  "category": null
+  "datetime": "2026-10-20T15:30:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+"expected":
+  "intended_closed":
+  - "kg-30"
+---
+"id": "rr-split-hours-03"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "브레이크타임에도 갈 수 있는 곳"
+  "category": null
+  "datetime": "2026-10-21T16:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed":
+  - "kg-14"
+  - "kg-17"
+---
+"id": "rr-split-hours-04"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "늦은 점심 가능한 식당"
+  "category": null
+  "datetime": "2026-10-22T14:15:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-41"
+---
+"id": "rr-split-hours-05"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "오후에 잠깐 먹을 곳"
+  "category": null
+  "datetime": "2026-10-23T16:30:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-38"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+---
+"id": "rr-split-hours-06"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "저녁 영업 다시 시작한 식당이 있는 코스"
+  "category": null
+  "datetime": "2026-10-24T17:15:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-25"
+  - "kg-30"
+  - "kg-48"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-split-hours-07"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "점심시간에 들를 곳"
+  "category": null
+  "datetime": "2026-10-24T13:15:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-split-hours-08"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "쉬는 시간 끝나고 저녁 먹을 곳"
+  "category": null
+  "datetime": "2026-10-27T17:30:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-split-hours-09"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "점심 마감 전에 밥 먹을 곳"
+  "category": null
+  "datetime": "2026-10-28T14:45:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-split-hours-10"
+"endpoint": "rerank"
+"case": "split-hours"
+"source": "synthetic"
+"intent": "하루 여러 영업 구간을 각각 적용해 구간 사이 휴식 시간과 재개장 뒤를 구분하는지 확인한다."
+"input":
+  "query": "식당 중간 휴식 시간 피해서 추천해줘"
+  "category": null
+  "datetime": "2026-10-29T15:45:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-36"
+  - "kg-38"
+  - "kg-40"
+  - "kg-41"
+---
+"id": "rr-exception-closed-01"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "keepgo"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "아이와 함께 가기 좋은 실내"
+  "category": null
+  "datetime": "2026-10-01T14:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-19":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "TUESDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "WEDNESDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "THURSDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "FRIDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "SATURDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "SUNDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+      "exceptions":
+        "2026-10-01": []
+"expected":
+  "intended_closed":
+  - "kg-19"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-02"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "keepgo"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "팝업 구경"
+  "category":
+  - "팝업"
+  "datetime": "2026-10-05T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-03":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "TUESDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "WEDNESDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "THURSDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "FRIDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "SATURDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "SUNDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+      "exceptions":
+        "2026-10-05": []
+    "kg-47":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "TUESDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "WEDNESDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "THURSDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "FRIDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "SATURDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "SUNDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+      "exceptions":
+        "2026-10-05": []
+"expected":
+  "intended_closed":
+  - "kg-03"
+  - "kg-47"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-03"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "keepgo"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "산책하기 좋은"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-03T12:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-07":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+        "TUESDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+        "WEDNESDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+        "THURSDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+        "FRIDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+        "SATURDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+        "SUNDAY":
+        - "open_time": "09:00"
+          "close_time": "22:00"
+      "exceptions":
+        "2026-10-03": []
+"expected":
+  "intended_closed":
+  - "kg-07"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다. keepgo 요청에 시각이 없어 점심 방문 시각 \"12:00\"을 합성했다."
+---
+"id": "rr-exception-closed-04"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "평일 점심에 먹고 구경할 곳"
+  "category": null
+  "datetime": "2026-10-20T12:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+  "hours_override":
+    "kg-15":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:00"
+          "close_time": "18:00"
+        "TUESDAY":
+        - "open_time": "11:00"
+          "close_time": "18:00"
+        "WEDNESDAY":
+        - "open_time": "11:00"
+          "close_time": "18:00"
+        "THURSDAY":
+        - "open_time": "11:00"
+          "close_time": "18:00"
+        "FRIDAY":
+        - "open_time": "11:00"
+          "close_time": "18:00"
+        "SATURDAY":
+        - "open_time": "11:00"
+          "close_time": "18:00"
+        "SUNDAY": []
+      "exceptions":
+        "2026-10-20": []
+"expected":
+  "intended_closed":
+  - "kg-15"
+  - "kg-18"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-05"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "퇴근하고 저녁 먹을 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-21T18:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+  "hours_override":
+    "kg-41":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "TUESDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "WEDNESDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "THURSDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "FRIDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "SATURDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "SUNDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+      "exceptions":
+        "2026-10-21": []
+"expected":
+  "intended_closed":
+  - "kg-36"
+  - "kg-41"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-06"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "친구랑 팝업 구경"
+  "category":
+  - "팝업"
+  "datetime": "2026-10-22T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-06":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+        "TUESDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+        "WEDNESDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+        "THURSDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+        "FRIDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+        "SATURDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+        "SUNDAY":
+        - "open_time": "11:30"
+          "close_time": "19:30"
+      "exceptions":
+        "2026-10-22": []
+    "kg-48":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+        "TUESDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+        "WEDNESDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+        "THURSDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+        "FRIDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+        "SATURDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+        "SUNDAY":
+        - "open_time": "10:00"
+          "close_time": "22:00"
+      "exceptions":
+        "2026-10-22": []
+"expected":
+  "intended_closed":
+  - "kg-06"
+  - "kg-48"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-07"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "빵 사고 동네 둘러보기"
+  "category": null
+  "datetime": "2026-10-23T12:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+  "hours_override":
+    "kg-17":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "TUESDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "WEDNESDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "THURSDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "FRIDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "SATURDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "SUNDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+      "exceptions":
+        "2026-10-23": []
+"expected":
+  "intended_closed":
+  - "kg-17"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-08"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "주말 저녁 맛집"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-24T18:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+  "hours_override":
+    "kg-34":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:30"
+          "close_time": "13:30"
+        - "open_time": "17:00"
+          "close_time": "20:30"
+        "TUESDAY":
+        - "open_time": "11:30"
+          "close_time": "13:30"
+        - "open_time": "17:00"
+          "close_time": "20:30"
+        "WEDNESDAY":
+        - "open_time": "11:30"
+          "close_time": "13:30"
+        - "open_time": "17:00"
+          "close_time": "20:30"
+        "THURSDAY":
+        - "open_time": "11:30"
+          "close_time": "13:30"
+        - "open_time": "17:00"
+          "close_time": "20:30"
+        "FRIDAY":
+        - "open_time": "11:30"
+          "close_time": "13:30"
+        - "open_time": "17:00"
+          "close_time": "20:30"
+        "SATURDAY":
+        - "open_time": "11:30"
+          "close_time": "13:30"
+        - "open_time": "17:00"
+          "close_time": "20:30"
+        "SUNDAY": []
+      "exceptions":
+        "2026-10-24": []
+    "kg-38":
+      "weekly_hours":
+        "MONDAY": []
+        "TUESDAY":
+        - "open_time": "10:30"
+          "close_time": "15:00"
+        - "open_time": "17:00"
+          "close_time": "21:30"
+        "WEDNESDAY":
+        - "open_time": "10:30"
+          "close_time": "15:00"
+        - "open_time": "17:00"
+          "close_time": "21:30"
+        "THURSDAY":
+        - "open_time": "10:30"
+          "close_time": "15:00"
+        - "open_time": "17:00"
+          "close_time": "21:30"
+        "FRIDAY":
+        - "open_time": "10:30"
+          "close_time": "15:00"
+        - "open_time": "17:00"
+          "close_time": "21:30"
+        "SATURDAY":
+        - "open_time": "10:30"
+          "close_time": "15:00"
+        - "open_time": "17:00"
+          "close_time": "21:30"
+        "SUNDAY":
+        - "open_time": "10:30"
+          "close_time": "15:00"
+        - "open_time": "17:00"
+          "close_time": "21:30"
+      "exceptions":
+        "2026-10-24": []
+"expected":
+  "intended_closed":
+  - "kg-34"
+  - "kg-36"
+  - "kg-38"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-09"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "공원 산책하고 쇼핑"
+  "category": null
+  "datetime": "2026-10-25T14:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-02":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+        "TUESDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+        "WEDNESDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+        "THURSDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+        "FRIDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+        "SATURDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+        "SUNDAY":
+        - "open_time": "11:00"
+          "close_time": "22:00"
+      "exceptions":
+        "2026-10-25": []
+"expected":
+  "intended_closed":
+  - "kg-02"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-exception-closed-10"
+"endpoint": "rerank"
+"case": "exception-closed"
+"source": "synthetic"
+"intent": "평소 영업하는 요일이어도 날짜별 임시 휴무 예외를 우선 적용하는지 확인한다."
+"input":
+  "query": "따뜻한 국물 먹을 곳"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-27T12:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+  "hours_override":
+    "kg-33":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "TUESDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "WEDNESDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "THURSDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "FRIDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "SATURDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "SUNDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+      "exceptions":
+        "2026-10-27": []
+    "kg-39":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "TUESDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "WEDNESDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "THURSDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "FRIDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "SATURDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+        "SUNDAY":
+        - "open_time": "00:00"
+          "close_time": "23:59"
+      "exceptions":
+        "2026-10-27": []
+"expected":
+  "intended_closed":
+  - "kg-33"
+  - "kg-35"
+  - "kg-37"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"note": "풀에 날짜별 예외가 없어 주간 영업시간을 보존하고 해당 날짜만 임시 휴무로 설정했다."
+---
+"id": "rr-day-unknown-01"
+"endpoint": "rerank"
+"case": "day-unknown"
+"source": "synthetic"
+"intent": "방문 요일의 영업시간이 null이면 휴무로 단정하지 않고 후보로 남기는지 확인한다."
+"input":
+  "query": "평일에 성수 구경할 곳"
+  "category": null
+  "datetime": "2026-10-20T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-03":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "TUESDAY": null
+        "WEDNESDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "THURSDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "FRIDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "SATURDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+        "SUNDAY":
+        - "open_time": "12:00"
+          "close_time": "19:00"
+      "exceptions": {}
+"expected":
+  "intended_closed": []
+"note": "원본의 요일 미상 장소 kg-44는 전주 묶음이 3곳뿐이어서 같은 묶음 후보 6~10곳 조건을 충족하지 못한다. 해당 지역 후보의 방문 요일만 null로 보완했다."
+---
+"id": "rr-day-unknown-02"
+"endpoint": "rerank"
+"case": "day-unknown"
+"source": "synthetic"
+"intent": "방문 요일의 영업시간이 null이면 휴무로 단정하지 않고 후보로 남기는지 확인한다."
+"input":
+  "query": "낮에 구경하고 밥 먹을 곳"
+  "category": null
+  "datetime": "2026-10-21T12:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+  "hours_override":
+    "kg-16":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "09:30"
+          "close_time": "19:00"
+        "TUESDAY":
+        - "open_time": "09:30"
+          "close_time": "19:00"
+        "WEDNESDAY": null
+        "THURSDAY":
+        - "open_time": "09:30"
+          "close_time": "19:00"
+        "FRIDAY":
+        - "open_time": "09:30"
+          "close_time": "19:00"
+        "SATURDAY":
+        - "open_time": "09:30"
+          "close_time": "19:00"
+        "SUNDAY": []
+      "exceptions": {}
+"expected":
+  "intended_closed": []
+"note": "원본의 요일 미상 장소 kg-44는 전주 묶음이 3곳뿐이어서 같은 묶음 후보 6~10곳 조건을 충족하지 못한다. 해당 지역 후보의 방문 요일만 null로 보완했다."
+---
+"id": "rr-day-unknown-03"
+"endpoint": "rerank"
+"case": "day-unknown"
+"source": "synthetic"
+"intent": "방문 요일의 영업시간이 null이면 휴무로 단정하지 않고 후보로 남기는지 확인한다."
+"input":
+  "query": "저녁에 술 한잔할 곳"
+  "category": null
+  "datetime": "2026-10-22T18:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-36"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-40"
+  - "kg-41"
+  - "kg-42"
+  "hours_override":
+    "kg-41":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "TUESDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "WEDNESDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "THURSDAY": null
+        "FRIDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "SATURDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+        "SUNDAY":
+        - "open_time": "17:00"
+          "close_time": "02:00"
+      "exceptions": {}
+"expected":
+  "intended_closed":
+  - "kg-36"
+"note": "원본의 요일 미상 장소 kg-44는 전주 묶음이 3곳뿐이어서 같은 묶음 후보 6~10곳 조건을 충족하지 못한다. 해당 지역 후보의 방문 요일만 null로 보완했다."
+---
+"id": "rr-day-unknown-04"
+"endpoint": "rerank"
+"case": "day-unknown"
+"source": "synthetic"
+"intent": "방문 요일의 영업시간이 null이면 휴무로 단정하지 않고 후보로 남기는지 확인한다."
+"input":
+  "query": "뷰티 팝업 구경하고 싶어"
+  "category": null
+  "datetime": "2026-10-23T14:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+  "hours_override":
+    "kg-47":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "TUESDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "WEDNESDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "THURSDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "FRIDAY": null
+        "SATURDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+        "SUNDAY":
+        - "open_time": "11:00"
+          "close_time": "21:00"
+      "exceptions": {}
+"expected":
+  "intended_closed": []
+"note": "원본의 요일 미상 장소 kg-44는 전주 묶음이 3곳뿐이어서 같은 묶음 후보 6~10곳 조건을 충족하지 못한다. 해당 지역 후보의 방문 요일만 null로 보완했다."
+---
+"id": "rr-day-unknown-05"
+"endpoint": "rerank"
+"case": "day-unknown"
+"source": "synthetic"
+"intent": "방문 요일의 영업시간이 null이면 휴무로 단정하지 않고 후보로 남기는지 확인한다."
+"input":
+  "query": "주말에 빵도 사고 둘러볼 곳"
+  "category": null
+  "datetime": "2026-10-24T13:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+  "hours_override":
+    "kg-17":
+      "weekly_hours":
+        "MONDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "TUESDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "WEDNESDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "THURSDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "FRIDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+        "SATURDAY": null
+        "SUNDAY":
+        - "open_time": "08:00"
+          "close_time": "16:00"
+      "exceptions": {}
+"expected":
+  "intended_closed": []
+"note": "원본의 요일 미상 장소 kg-44는 전주 묶음이 3곳뿐이어서 같은 묶음 후보 6~10곳 조건을 충족하지 못한다. 해당 지역 후보의 방문 요일만 null로 보완했다."
+---
+"id": "rr-condition-opposite-01"
+"endpoint": "rerank"
+"case": "condition-opposite"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 장소 요약상 요청과 명확히 반대되는 후보를 제외하는지 확인한다."
+"input":
+  "query": "실내 매장에서만 놀고 싶어 야외 공원은 빼줘"
+  "category": null
+  "datetime": "2026-10-20T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed": []
+  "condition_mismatch":
+  - "kg-25"
+"note": "kg-25는 도심 공원이므로 실내 조건과 반대다."
+---
+"id": "rr-condition-opposite-02"
+"endpoint": "rerank"
+"case": "condition-opposite"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 장소 요약상 요청과 명확히 반대되는 후보를 제외하는지 확인한다."
+"input":
+  "query": "빵집 말고 밥 먹는 식당으로 추천해줘"
+  "category": null
+  "datetime": "2026-10-21T12:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed": []
+  "condition_mismatch":
+  - "kg-17"
+"note": "kg-17은 빵을 전문으로 구워내는 베이커리다."
+---
+"id": "rr-condition-opposite-03"
+"endpoint": "rerank"
+"case": "condition-opposite"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 장소 요약상 요청과 명확히 반대되는 후보를 제외하는지 확인한다."
+"input":
+  "query": "화장품이나 메이크업 체험은 빼고 구경하고 싶어"
+  "category": null
+  "datetime": "2026-10-22T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed": []
+  "condition_mismatch":
+  - "kg-06"
+  - "kg-47"
+  - "kg-48"
+"note": "kg-06과 kg-47 및 kg-48은 화장품 또는 메이크업 체험을 제공한다."
+---
+"id": "rr-condition-opposite-04"
+"endpoint": "rerank"
+"case": "condition-opposite"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 장소 요약상 요청과 명확히 반대되는 후보를 제외하는지 확인한다."
+"input":
+  "query": "매운 양념 요리는 빼줘 안 매운 음식 먹고 싶어"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-23T18:00:00"
+  "candidate_ids":
+  - "kg-33"
+  - "kg-34"
+  - "kg-35"
+  - "kg-37"
+  - "kg-38"
+  - "kg-39"
+  - "kg-41"
+  - "kg-42"
+"expected":
+  "intended_closed": []
+  "condition_mismatch":
+  - "kg-34"
+  - "kg-37"
+  - "kg-38"
+"note": "kg-34는 고추장 삼겹살, kg-37은 매운 갈비찜, kg-38은 매콤한 두부두루치기를 대표로 한다."
+---
+"id": "rr-condition-opposite-05"
+"endpoint": "rerank"
+"case": "condition-opposite"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 장소 요약상 요청과 명확히 반대되는 후보를 제외하는지 확인한다."
+"input":
+  "query": "화장품 체험은 하고 싶은데 옷이나 패션 잡화 쇼핑은 빼줘"
+  "category": null
+  "datetime": "2026-10-24T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed": []
+  "condition_mismatch":
+  - "kg-02"
+  - "kg-05"
+"note": "kg-02는 패션 상품 매장, kg-05는 패션 소품 및 잡화 매장이다."
+---
+"id": "rr-category-focus-01"
+"endpoint": "rerank"
+"case": "category-focus"
+"source": "keepgo"
+"intent": "모든 후보가 열려 있을 때 카페 요청을 중심으로 재순위하는지 확인한다."
+"input":
+  "query": "조용한"
+  "category":
+  - "카페"
+  "datetime": "2026-10-03T14:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed": []
+"note": "카페 후보는 kg-17이다. 요약만으로 조용함의 반대라고 단정할 후보는 지정하지 않는다."
+---
+"id": "rr-category-focus-02"
+"endpoint": "rerank"
+"case": "category-focus"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 지정한 카테고리의 장소를 중심으로 재순위하는지 확인한다."
+"input":
+  "query": "팝업만 보고 싶어"
+  "category":
+  - "팝업"
+  "datetime": "2026-10-20T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-category-focus-03"
+"endpoint": "rerank"
+"case": "category-focus"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 지정한 카테고리의 장소를 중심으로 재순위하는지 확인한다."
+"input":
+  "query": "밥 먹을 곳 위주로"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-21T12:00:00"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-14"
+  - "kg-15"
+  - "kg-16"
+  - "kg-17"
+  - "kg-18"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-category-focus-04"
+"endpoint": "rerank"
+"case": "category-focus"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 지정한 카테고리의 장소를 중심으로 재순위하는지 확인한다."
+"input":
+  "query": "공원 같은 명소부터 추천해줘"
+  "category":
+  - "명소"
+  "datetime": "2026-10-22T14:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed": []
+---
+"id": "rr-category-focus-05"
+"endpoint": "rerank"
+"case": "category-focus"
+"source": "synthetic"
+"intent": "모든 후보가 영업 중인 상태에서 지정한 카테고리의 장소를 중심으로 재순위하는지 확인한다."
+"input":
+  "query": "밥 먹고 팝업도 구경하고 싶어"
+  "category":
+  - "맛집"
+  - "팝업"
+  "datetime": "2026-10-23T13:00:00"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-03"
+  - "kg-05"
+  - "kg-06"
+  - "kg-07"
+  - "kg-19"
+  - "kg-25"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_closed": []
