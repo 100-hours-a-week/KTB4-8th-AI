@@ -6,6 +6,12 @@ from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
+
+class Coordinate(BaseModel):
+    """좌표"""
+    lat: float = Field(..., description="위도")
+    lng: float = Field(..., description="경도")
+
 ResponseMessage = Literal[
     "analyze_success",
     "verify_success",

@@ -2,10 +2,10 @@ from datetime import date as date_type
 from datetime import datetime as datetime_type
 from typing import Annotated, Literal, Optional
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
 
 from app.schemas.category import PlaceCategory
-from app.schemas.common import APIResponse
+from app.schemas.common import APIResponse, Coordinate
 
 AvailableTime = Literal["180", "360", "540"]
 
@@ -36,9 +36,27 @@ def has_visit_time(value: Optional[datetime_type]) -> bool:
     return value is not None and (value.hour, value.minute) != (0, 0)
 
 
+def _empty_coordinate_to_none(value):
+    """백엔드는 출발지가 없을 때 {"lat": null, "lng": null} 을 보낸다(10/21 실측). 빈 좌표는 "출발지 없음"."""
+    if isinstance(value, dict) and value.get("lat") is None and value.get("lng") is None:
+        return None
+    return value
+
+
+# 출발지는 좌표로 주고받는다(10/21 결정, 코스 추천의 origin 과 같은 형식). 모델은 좌표를
+# 만들 수 없어서, 모델에게는 주소로 바꿔 보여 주고(SlotsLLM) 모델이 말한 이름은 코드가
+# 좌표로 바꾼다(api/extract.py). 이름 → 좌표는 주소 검색이라 "서울역" 같은 장소명은
+# 못 찾을 수 있다 — 시험 후 문자열로 되돌릴 수 있는 임시 방식이다.
+OriginCoordinate = Annotated[
+    Optional[Coordinate],
+    BeforeValidator(_empty_coordinate_to_none),
+    Field(description="출발지 좌표. 없거나 못 찾으면 null"),
+]
+
+
 class Slots(BaseModel):
-    """대화 슬롯 모델. 내부 요소는 전부 String이며 null이 될 수 있음"""
-    origin: Optional[str] = Field(default=None, description="출발지")
+    """대화 슬롯 모델. origin 은 좌표, 나머지는 문자열이며 모두 null 이 될 수 있음"""
+    origin: OriginCoordinate = None
     region: Optional[str] = Field(default=None, description="지역")
     datetime: VisitDatetime = None
     available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
@@ -56,6 +74,18 @@ class ExtractRequest(BaseModel):
 class ExtractData(BaseModel):
     """슬롯 추출 결과 모델"""
     slot: Slots = Field(..., description="누적 갱신된 슬롯 값")
+    query: str = Field(..., description="정성 조건 및 시간")
+    bot_message: str = Field(..., description="사용자에게 보여줄 응답 문구")
+
+
+class SlotsLLM(Slots):
+    """모델이 채우는 슬롯. 출발지만 좌표 대신 이름으로 받는다."""
+    origin: Optional[str] = Field(default=None, description="이번 발화에서 말한 출발지 이름")
+
+
+class ExtractDataLLM(BaseModel):
+    """모델의 구조화 출력. 응답(ExtractData)으로 내보내기 전에 출발지를 좌표로 바꾼다."""
+    slot: SlotsLLM
     query: str = Field(..., description="정성 조건 및 시간")
     bot_message: str = Field(..., description="사용자에게 보여줄 응답 문구")
 

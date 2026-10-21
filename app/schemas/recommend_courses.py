@@ -5,17 +5,11 @@ from pydantic import BaseModel, Field
 
 from app.schemas.business_hours import BusinessHours
 from app.schemas.category import PlaceCategory
-from app.schemas.common import APIResponse, ResponseMessage
+from app.schemas.common import APIResponse, Coordinate, ResponseMessage
 from app.schemas.extract import AvailableTime, VisitDatetime
 
 
 #요청 스키마
-class Coordinate(BaseModel):
-    """좌표"""
-    lat: float = Field(..., description="위도")
-    lng: float = Field(..., description="경도")
-
-
 class RecommendCandidate(BaseModel):
     """추천 후보 장소 모델"""
     place_id: str = Field(..., description="장소 식별자")

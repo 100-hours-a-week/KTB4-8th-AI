@@ -71,6 +71,52 @@ async def geocode(address: str) -> tuple[float, float] | None:
     return float(first["y"]), float(first["x"])
 
 
+# 좌표 → 주소 (네이버 Reverse Geocoding). extract 가 받은 출발지 좌표를 모델에게
+# 사람이 읽는 말로 보여 줄 때 쓴다.
+# API: GET {NAVER_MAP_BASE_URL}/map-reversegeocode/v2/gc?coords=<경도,위도>&orders=roadaddr,addr&output=json
+#      응답 status.code 0 = 성공, 3 = 결과 없음. results[].region.area1~3 = 시·구·동,
+#      roadaddr 결과의 land.addition0.value = 건물 이름(있을 때만, 예 "서울역(철도역)")
+_REVERSE_GEOCODE_PATH = "/map-reversegeocode/v2/gc"
+
+
+@traceable(name="reverse_geocode", run_type="tool")
+async def reverse_geocode(lat: float, lng: float) -> str | None:
+    """(위도, 경도)를 "건물 이름 (시 구 동)" 또는 "시 구 동" 으로 바꾼다. 결과가 없으면 None.
+
+    geocode 와 같은 기준으로, 결과 없음은 None, 벤더 장애는 MapAPIError.
+    """
+    if not (settings.NAVER_MAP_CLIENT_ID and settings.NAVER_MAP_CLIENT_SECRET):
+        raise MapAPIError(
+            "지도 API 키가 없습니다 — .env 에 NAVER_MAP_CLIENT_ID, NAVER_MAP_CLIENT_SECRET 를 넣어주세요"
+        )
+
+    headers = {
+        "x-ncp-apigw-api-key-id": settings.NAVER_MAP_CLIENT_ID,
+        "x-ncp-apigw-api-key": settings.NAVER_MAP_CLIENT_SECRET,
+        "Accept": "application/json",
+    }
+    params = {"coords": f"{lng},{lat}", "orders": "roadaddr,addr", "output": "json"}
+    try:
+        async with _new_client() as client:
+            response = await client.get(_REVERSE_GEOCODE_PATH, params=params, headers=headers)
+    except httpx.HTTPError as exc:
+        raise MapAPIError(f"지도 API 호출 실패: {type(exc).__name__}: {exc}") from exc
+
+    if response.status_code != 200:
+        # 403 은 콘솔에서 Reverse Geocoding 사용이 꺼진 경우(10/21 실측)
+        raise MapAPIError(f"지도 API HTTP {response.status_code}: {response.text[:200]}")
+
+    results = response.json().get("results") or []
+    if not results:
+        return None
+
+    region = results[0]["region"]
+    area = " ".join(region[f"area{i}"]["name"] for i in (1, 2, 3) if region.get(f"area{i}", {}).get("name"))
+    roadaddr = next((r for r in results if r.get("name") == "roadaddr"), {})
+    building = ((roadaddr.get("land") or {}).get("addition0") or {}).get("value", "")
+    return f"{building} ({area})" if building else (area or None)
+
+
 # 자동차 길찾기 (네이버 Directions 5).
 # API: GET {NAVER_MAP_BASE_URL}/map-direction/v1/driving?start=<경도,위도>&goal=<경도,위도>
 #      응답 code 0 = 성공, route.<option>[0].summary.duration 은 밀리초

@@ -1,0 +1,2397 @@
+"id": "ext-time-only-01"
+"endpoint": "extract"
+"case": "time-only"
+"source": "synthetic"
+"intent": "시각만 말한 발화를 이전 방문 날짜에 붙이고 기존 조건을 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "오후 두 시쯤 출발할게"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-time-only-02"
+"endpoint": "extract"
+"case": "time-only"
+"source": "synthetic"
+"intent": "시각만 말한 발화를 이전 방문 날짜에 붙이고 기존 조건을 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-25T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "아침 9시 반에 보자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-25T09:30:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-time-only-03"
+"endpoint": "extract"
+"case": "time-only"
+"source": "synthetic"
+"intent": "시각만 말한 발화를 이전 방문 날짜에 붙이고 기존 조건을 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-31T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "저녁 일곱 시로 할래"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-31T19:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-time-only-04"
+"endpoint": "extract"
+"case": "time-only"
+"source": "synthetic"
+"intent": "시각만 말한 발화를 이전 방문 날짜에 붙이고 기존 조건을 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-11-01T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "오후 4시 15분쯤 괜찮아"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-11-01T16:15:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-time-only-05"
+"endpoint": "extract"
+"case": "time-only"
+"source": "synthetic"
+"intent": "시각만 말한 발화를 이전 방문 날짜에 붙이고 기존 조건을 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-11-07T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "밤 9시로 잡아줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-11-07T21:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-vague-time-01"
+"endpoint": "extract"
+"case": "vague-time"
+"source": "synthetic"
+"intent": "모호한 시간 표현을 기준 시각 10:00으로 변환하고 그 기준을 안내하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "내일 오전에 갈래"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-20T10:00:00"
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": "10:00"
+---
+"id": "ext-vague-time-02"
+"endpoint": "extract"
+"case": "vague-time"
+"source": "synthetic"
+"intent": "모호한 시간 표현을 기준 시각 12:00으로 변환하고 그 기준을 안내하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "오늘 점심에 보자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-19T12:00:00"
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": "12:00"
+---
+"id": "ext-vague-time-03"
+"endpoint": "extract"
+"case": "vague-time"
+"source": "synthetic"
+"intent": "모호한 시간 표현을 기준 시각 14:00으로 변환하고 그 기준을 안내하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "이번 주 토요일 오후가 좋겠어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": "14:00"
+---
+"id": "ext-vague-time-04"
+"endpoint": "extract"
+"case": "vague-time"
+"source": "synthetic"
+"intent": "모호한 시간 표현을 기준 시각 18:00으로 변환하고 그 기준을 안내하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "내일 저녁에 나갈까 해"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-20T18:00:00"
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": "18:00"
+---
+"id": "ext-vague-time-05"
+"endpoint": "extract"
+"case": "vague-time"
+"source": "synthetic"
+"intent": "모호한 시간 표현을 기준 시각 20:00으로 변환하고 그 기준을 안내하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "오늘 밤에 가고 싶어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-19T20:00:00"
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": "20:00"
+---
+"id": "ext-time-without-date-01"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "카페"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "오후 2시에 출발할게"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "카페"
+  "query_includes":
+  - "출발 14:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": null
+---
+"id": "ext-time-without-date-02"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "맛집"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "아침 아홉 시 반에 가자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "맛집"
+  "query_includes":
+  - "출발 09:30"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": null
+---
+"id": "ext-time-without-date-03"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "전시"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "저녁 7시 15분쯤 보자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "전시"
+  "query_includes":
+  - "출발 19:15"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": null
+---
+"id": "ext-time-without-date-04"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "명소"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "오전 열한 시에 나갈 거야"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "명소"
+  "query_includes":
+  - "출발 11:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": null
+---
+"id": "ext-time-without-date-05"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "팝업"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "밤 열 시 반으로 할래"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "팝업"
+  "query_includes":
+  - "출발 22:30"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": null
+---
+"id": "ext-time-without-date-06"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "망원"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "카페"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "오전에 가고 싶어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "망원"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "카페"
+  "query_includes":
+  - "출발 10:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": "10:00"
+---
+"id": "ext-time-without-date-07"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "강남"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "맛집"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "점심에 보자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "강남"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "맛집"
+  "query_includes":
+  - "출발 12:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": "12:00"
+---
+"id": "ext-time-without-date-08"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "동대문"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "전시"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "오후가 편할 것 같아"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "동대문"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "전시"
+  "query_includes":
+  - "출발 14:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": "14:00"
+---
+"id": "ext-time-without-date-09"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "마곡"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "명소"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "저녁에 출발할래"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "마곡"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "명소"
+  "query_includes":
+  - "출발 18:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": "18:00"
+---
+"id": "ext-time-without-date-10"
+"endpoint": "extract"
+"case": "time-without-date"
+"source": "synthetic"
+"intent": "날짜 없는 시각을 datetime에 채우지 않고 query에 출발 시각으로 남기며 날짜를 묻는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "수원"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "팝업"
+  "prev_query": "대중교통으로 가기 좋은"
+  "chat": "밤에 갈게"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "수원"
+    "datetime": null
+    "available_time": null
+    "category":
+    - "팝업"
+  "query_includes":
+  - "출발 20:00"
+  - "대중교통"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": "20:00"
+---
+"id": "ext-date-change-keep-time-01"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "내일로 바꿀래"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "성수"
+    "datetime": "2026-10-20T14:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-02"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "홍대"
+    "datetime": "2026-10-24T09:30:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "이번 주 일요일로 미뤄줘"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "홍대"
+    "datetime": "2026-10-25T09:30:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-03"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "잠실"
+    "datetime": "2026-10-23T19:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "10월 31일에 가자"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "잠실"
+    "datetime": "2026-10-31T19:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-04"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "대전"
+    "datetime": "2026-10-24T11:15:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "다음 주 월요일로 해줘"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "대전"
+    "datetime": "2026-10-26T11:15:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-05"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "전주"
+    "datetime": "2026-10-24T16:30:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "모레가 낫겠다"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "전주"
+    "datetime": "2026-10-21T16:30:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-06"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "망원"
+    "datetime": "2026-10-22T20:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "오늘 가는 걸로 바꾸자"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "망원"
+    "datetime": "2026-10-19T20:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-07"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "강남"
+    "datetime": "2026-10-25T13:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "11월 1일로 옮겨줘"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "강남"
+    "datetime": "2026-11-01T13:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-08"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "동대문"
+    "datetime": "2026-10-24T18:45:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "이번 주 금요일로 할래"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "동대문"
+    "datetime": "2026-10-23T18:45:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-date-change-keep-time-09"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "마곡"
+    "datetime": null
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "출발 10:30 조용한"
+  "chat": "이번 주 토요일에 가자"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "마곡"
+    "datetime": "2026-10-24T10:30:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  - "출발 10:30"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+"note": "이전 날짜가 없는 경우로, 템플릿의 이전 query 시각 복원 규칙을 함께 검증한다."
+---
+"id": "ext-date-change-keep-time-10"
+"endpoint": "extract"
+"case": "date-change-keep-time"
+"source": "synthetic"
+"intent": "날짜만 지정할 때 이전 슬롯의 시각 또는 이전 query의 출발 시각을 이어 붙이는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "수원"
+    "datetime": null
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "출발 17:00 조용한"
+  "chat": "내일로 잡아줘"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "수원"
+    "datetime": "2026-10-20T17:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  - "출발 17:00"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+"note": "이전 날짜가 없는 경우로, 템플릿의 이전 query 시각 복원 규칙을 함께 검증한다."
+---
+"id": "ext-category-add-01"
+"endpoint": "extract"
+"case": "category-add"
+"source": "synthetic"
+"intent": "추가 표현에 따라 기존 카테고리를 보존하고 새 카테고리를 합친 최종 배열을 만드는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "카페"
+  "prev_query": "실내"
+  "chat": "전시도 하나 넣어줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "카페"
+    - "전시"
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-add-02"
+"endpoint": "extract"
+"case": "category-add"
+"source": "synthetic"
+"intent": "추가 표현에 따라 기존 카테고리를 보존하고 새 카테고리를 합친 최종 배열을 만드는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+  "prev_query": "실내"
+  "chat": "카페도 들르고 싶어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+    - "카페"
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-add-03"
+"endpoint": "extract"
+"case": "category-add"
+"source": "synthetic"
+"intent": "추가 표현에 따라 기존 카테고리를 보존하고 새 카테고리를 합친 최종 배열을 만드는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "전시"
+    - "카페"
+  "prev_query": "실내"
+  "chat": "팝업도 보고 싶어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "전시"
+    - "카페"
+    - "팝업"
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-add-04"
+"endpoint": "extract"
+"case": "category-add"
+"source": "synthetic"
+"intent": "추가 표현에 따라 기존 카테고리를 보존하고 새 카테고리를 합친 최종 배열을 만드는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+    - "카페"
+  "prev_query": "실내"
+  "chat": "명소도 같이 가보자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+    - "카페"
+    - "명소"
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-add-05"
+"endpoint": "extract"
+"case": "category-add"
+"source": "synthetic"
+"intent": "추가 표현에 따라 기존 카테고리를 보존하고 새 카테고리를 합친 최종 배열을 만드는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "실내"
+  "chat": "맛집도 추가해줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-remove-01"
+"endpoint": "extract"
+"case": "category-remove"
+"source": "synthetic"
+"intent": "제외하거나 교체한 카테고리를 최종 목록과 query에서 제거하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "카페"
+  "prev_query": "가성비 좋은"
+  "chat": "카페 말고 전시로 가자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "전시"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "카페"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-remove-02"
+"endpoint": "extract"
+"case": "category-remove"
+"source": "synthetic"
+"intent": "제외하거나 교체한 카테고리를 최종 목록과 query에서 제거하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+    - "카페"
+    - "명소"
+  "prev_query": "가성비 좋은"
+  "chat": "맛집은 빼고 카페랑 명소는 그대로 가자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "카페"
+    - "명소"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "맛집"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-remove-03"
+"endpoint": "extract"
+"case": "category-remove"
+"source": "synthetic"
+"intent": "제외하거나 교체한 카테고리를 최종 목록과 query에서 제거하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "팝업"
+    - "카페"
+  "prev_query": "가성비 좋은"
+  "chat": "팝업 대신 전시 보자"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "카페"
+    - "전시"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "팝업"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-remove-04"
+"endpoint": "extract"
+"case": "category-remove"
+"source": "synthetic"
+"intent": "제외하거나 교체한 카테고리를 최종 목록과 query에서 제거하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "전시"
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "전시는 빼고 맛집은 그대로 둬"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "전시"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-remove-05"
+"endpoint": "extract"
+"case": "category-remove"
+"source": "synthetic"
+"intent": "제외하거나 교체한 카테고리를 최종 목록과 query에서 제거하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "명소"
+  "prev_query": "가성비 좋은"
+  "chat": "명소 대신 팝업으로 바꿔줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "팝업"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "명소"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-any-01"
+"endpoint": "extract"
+"case": "category-any"
+"source": "synthetic"
+"intent": "카테고리 제한을 풀면 null 대신 빈 배열로 갱신하고 다른 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "카페"
+  "prev_query": "실내"
+  "chat": "카테고리는 아무거나 괜찮아"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": []
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-any-02"
+"endpoint": "extract"
+"case": "category-any"
+"source": "synthetic"
+"intent": "카테고리 제한을 풀면 null 대신 빈 배열로 갱신하고 다른 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+    - "카페"
+  "prev_query": "실내"
+  "chat": "카페든 식당이든 종류는 상관없어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": []
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-any-03"
+"endpoint": "extract"
+"case": "category-any"
+"source": "synthetic"
+"intent": "카테고리 제한을 풀면 null 대신 빈 배열로 갱신하고 다른 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "명소"
+  "prev_query": "실내"
+  "chat": "장소 종류는 안 가려 아무거나 추천해줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": []
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-any-04"
+"endpoint": "extract"
+"case": "category-any"
+"source": "synthetic"
+"intent": "카테고리 제한을 풀면 null 대신 빈 배열로 갱신하고 다른 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "전시"
+  "prev_query": "실내"
+  "chat": "전시만 고집 안 할게 카테고리 상관없어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": []
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-category-any-05"
+"endpoint": "extract"
+"case": "category-any"
+"source": "synthetic"
+"intent": "카테고리 제한을 풀면 null 대신 빈 배열로 갱신하고 다른 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "팝업"
+  "prev_query": "실내"
+  "chat": "팝업 아니어도 돼 종류는 아무거나 해줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": []
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-reference-01"
+"endpoint": "extract"
+"case": "reference"
+"source": "synthetic"
+"intent": "거기와 그때의 지칭 대상을 이전 슬롯에서 해석하고 이번에 바뀐 조건만 최종 상태에 반영하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "용산역"
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "카페"
+  "prev_query": "가성비 좋은"
+  "chat": "거기서 전시도 보고 싶어"
+"expected":
+  "final_slot":
+    "origin": "용산역"
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "카페"
+    - "전시"
+  "query_includes":
+  - "가성비"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-reference-02"
+"endpoint": "extract"
+"case": "reference"
+"source": "synthetic"
+"intent": "거기와 그때의 지칭 대상을 이전 슬롯에서 해석하고 이번에 바뀐 조건만 최종 상태에 반영하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "용산역"
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "그때 카페도 들르자"
+"expected":
+  "final_slot":
+    "origin": "용산역"
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "맛집"
+    - "카페"
+  "query_includes":
+  - "가성비"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-reference-03"
+"endpoint": "extract"
+"case": "reference"
+"source": "synthetic"
+"intent": "거기와 그때의 지칭 대상을 이전 슬롯에서 해석하고 이번에 바뀐 조건만 최종 상태에 반영하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "용산역"
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "거기서 여섯 시간 정도 놀자"
+"expected":
+  "final_slot":
+    "origin": "용산역"
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-reference-04"
+"endpoint": "extract"
+"case": "reference"
+"source": "synthetic"
+"intent": "거기와 그때의 지칭 대상을 이전 슬롯에서 해석하고 이번에 바뀐 조건만 최종 상태에 반영하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "용산역"
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "그때 출발은 서울역에서 할게"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-reference-05"
+"endpoint": "extract"
+"case": "reference"
+"source": "synthetic"
+"intent": "거기와 그때의 지칭 대상을 이전 슬롯에서 해석하고 이번에 바뀐 조건만 최종 상태에 반영하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "용산역"
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "거기 그때 그대로 가되 세 시간만 놀자"
+"expected":
+  "final_slot":
+    "origin": "용산역"
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "180"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-01"
+"endpoint": "extract"
+"case": "retract"
+"source": "keepgo"
+"intent": "조용함에 대한 제한을 철회하면 이전의 사람 적고 조용한 조건을 query에서 지우는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": "사람 적고 조용한"
+  "chat": "아니다, 활기찬 곳도 괜찮아"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": null
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes":
+  - "사람 적"
+  - "조용"
+  "bot_message":
+    "asks_time": false
+    "asks_date": true
+    "states_basis_time": null
+"note": "활기찬 곳도 괜찮다는 허용 표현이므로 활기찬 곳만으로 제한하지 않는다."
+---
+"id": "ext-retract-02"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "실내 조용한"
+  "chat": "실내 아니어도 돼 조용한 건 그대로"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "조용한"
+  "query_excludes":
+  - "실내"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-03"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "가성비 좋은 조용한"
+  "chat": "가격은 신경 안 쓸게 조용한 데로만"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "조용"
+  "query_excludes":
+  - "가성비"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-04"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "아이와 함께 실내"
+  "chat": "아이 안 데려가 실내는 유지해줘"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "실내"
+  "query_excludes":
+  - "아이"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-05"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "사람 적고 사진 찍기 좋은"
+  "chat": "사람 많아도 돼 사진 찍기 좋은 곳이면 돼"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "사진"
+  "query_excludes":
+  - "사람 적"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-06"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "망원"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "도보로만 이동 디저트가 맛있는"
+  "chat": "택시 타도 되니까 도보로만 갈 필요 없어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "망원"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "디저트"
+  "query_excludes":
+  - "도보로만"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-07"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "강남"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "술 없이 식사 매콤한"
+  "chat": "술도 마셔도 되겠다 매콤한 건 좋아"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "강남"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "매콤"
+  "query_excludes":
+  - "술 없이"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-08"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "동대문"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+  "prev_query": "예약 없이 이용 가능한 한식"
+  "chat": "예약해도 괜찮아 한식이면 좋겠어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "동대문"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+  "query_includes":
+  - "한식"
+  "query_excludes":
+  - "예약 없이"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-09"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "마곡"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "반려견 동반 가능한 전망 좋은"
+  "chat": "강아지는 집에 두고 갈게 전망은 좋았으면 해"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "마곡"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "전망"
+  "query_excludes":
+  - "반려견"
+  - "동반"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-retract-10"
+"endpoint": "extract"
+"case": "retract"
+"source": "synthetic"
+"intent": "철회한 정성 조건은 query에서 제거하고 여전히 유효한 조건은 유지하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "수원"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": "무료입장 사진 찍기 좋은"
+  "chat": "입장료 있어도 괜찮아 사진 잘 나오는 곳으로"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "수원"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "query_includes":
+  - "사진"
+  "query_excludes":
+  - "무료"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-available-time-01"
+"endpoint": "extract"
+"case": "available-time"
+"source": "keepgo"
+"intent": "keepgo 발화의 세 시간을 180분으로 바꾸고 기존 방문 일시를 유지하는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": null
+    "region": "홍대입구역"
+    "datetime": "2026-10-09T19:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "가성비 좋은 맛집 위주로 3시간"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대입구역"
+    "datetime": "2026-10-09T19:00:00"
+    "available_time": "180"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-available-time-02"
+"endpoint": "extract"
+"case": "available-time"
+"source": "synthetic"
+"intent": "외출 시간을 허용 값 180분과 360분과 540분 중 가장 가까운 값으로 변환하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "여섯 시간 정도 여유 있어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-available-time-03"
+"endpoint": "extract"
+"case": "available-time"
+"source": "synthetic"
+"intent": "외출 시간을 허용 값 180분과 360분과 540분 중 가장 가까운 값으로 변환하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "아홉 시간은 놀 수 있어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "540"
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-available-time-04"
+"endpoint": "extract"
+"case": "available-time"
+"source": "synthetic"
+"intent": "외출 시간을 허용 값 180분과 360분과 540분 중 가장 가까운 값으로 변환하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "두 시간 반 정도밖에 없어"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "180"
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-available-time-05"
+"endpoint": "extract"
+"case": "available-time"
+"source": "synthetic"
+"intent": "외출 시간을 허용 값 180분과 360분과 540분 중 가장 가까운 값으로 변환하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "일곱 시간쯤 가능해"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-multi-slot-01"
+"endpoint": "extract"
+"case": "multi-slot"
+"source": "keepgo"
+"intent": "한강 지역과 산책 및 식사 카테고리를 반영하면서 기존 날짜와 외출 시간을 보존하고 시각을 묻는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": "서울역"
+    "region": null
+    "datetime": "2026-10-03T00:00:00"
+    "available_time": "360"
+    "category": null
+  "prev_query": null
+  "chat": "한강 쪽에서 산책도 하고 맛있는 밥도 먹고 싶어"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "한강"
+    "datetime": "2026-10-03T00:00:00"
+    "available_time": "360"
+    "category":
+    - "명소"
+    - "맛집"
+  "query_includes":
+  - "산책"
+  - "맛있는"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": true
+    "asks_date": false
+    "states_basis_time": null
+"note": "산책할 장소는 명소, 밥 먹을 장소는 맛집으로 분류한다."
+---
+"id": "ext-multi-slot-02"
+"endpoint": "extract"
+"case": "multi-slot"
+"source": "keepgo"
+"intent": "다음 주 금요일과 명시한 저녁 7시 및 방문 지역을 함께 추출하는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": null
+    "region": null
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "다음 주 금요일 저녁 7시 홍대입구역 근처"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대입구역"
+    "datetime": "2026-10-09T19:00:00"
+    "available_time": null
+    "category": null
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-multi-slot-03"
+"endpoint": "extract"
+"case": "multi-slot"
+"source": "keepgo"
+"intent": "출발지와 날짜 및 시각과 외출 시간을 함께 추출하고 아이 동반과 실내 조건을 query에 남기는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": null
+    "region": null
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "내일 오후 2시쯤 잠실역에서 아이랑 3시간 정도 갈 만한 곳 추천해줘. 실내였으면 좋겠어"
+"expected":
+  "final_slot":
+    "origin": "잠실역"
+    "region": null
+    "datetime": "2026-10-01T14:00:00"
+    "available_time": "180"
+    "category": null
+  "query_includes":
+  - "아이"
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+"note": "잠실역에서 갈 만한 곳이라는 표현의 잠실역은 출발지로 해석한다. 방문 지역과 카테고리는 특정하지 않는다."
+---
+"id": "ext-multi-slot-04"
+"endpoint": "extract"
+"case": "multi-slot"
+"source": "keepgo"
+"intent": "명시한 출발지와 방문 날짜 및 시각과 맛집 카테고리를 함께 추출하는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": null
+    "region": null
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "내일 오후 2시에 강남역에서 출발해서 맛집 투어 할래"
+"expected":
+  "final_slot":
+    "origin": "강남역"
+    "region": null
+    "datetime": "2026-10-01T14:00:00"
+    "available_time": null
+    "category":
+    - "맛집"
+  "query_includes": []
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-multi-slot-05"
+"endpoint": "extract"
+"case": "multi-slot"
+"source": "synthetic"
+"intent": "한 발화의 출발지와 지역 및 날짜와 시각과 외출 시간과 복수 카테고리를 모두 반영하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": null
+    "region": null
+    "datetime": null
+    "available_time": null
+    "category": null
+  "prev_query": null
+  "chat": "이번 주 일요일 오전 11시에 대전역에서 출발해서 대전에서 카페랑 전시 보고 싶어 여섯 시간 정도 실내로"
+"expected":
+  "final_slot":
+    "origin": "대전역"
+    "region": "대전"
+    "datetime": "2026-10-25T11:00:00"
+    "available_time": "360"
+    "category":
+    - "카페"
+    - "전시"
+  "query_includes":
+  - "실내"
+  "query_excludes": []
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-region-change-01"
+"endpoint": "extract"
+"case": "region-change"
+"source": "keepgo"
+"intent": "지역만 홍대로 교체하고 기존 날짜와 카테고리 및 외출 시간과 정성 조건을 유지하는지 확인한다."
+"input":
+  "date": "2026-09-30"
+  "prev_slot":
+    "origin": null
+    "region": "성수"
+    "datetime": "2026-10-03T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "prev_query": "조용한"
+  "chat": "아 근데 지역은 홍대로 바꿀래"
+"expected":
+  "final_slot":
+    "origin": null
+    "region": "홍대"
+    "datetime": "2026-10-03T00:00:00"
+    "available_time": "180"
+    "category":
+    - "카페"
+  "query_includes":
+  - "조용한"
+  "query_excludes":
+  - "성수"
+  "bot_message":
+    "asks_time": true
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-region-change-02"
+"endpoint": "extract"
+"case": "region-change"
+"source": "synthetic"
+"intent": "방문 지역을 교체해도 출발지와 방문 일시 및 나머지 조건을 보존하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "홍대"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "지역은 잠실로 바꿔줘"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "홍대"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-region-change-03"
+"endpoint": "extract"
+"case": "region-change"
+"source": "synthetic"
+"intent": "방문 지역을 교체해도 출발지와 방문 일시 및 나머지 조건을 보존하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "잠실"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "아 성수 쪽으로 갈래"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "잠실"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-region-change-04"
+"endpoint": "extract"
+"case": "region-change"
+"source": "synthetic"
+"intent": "방문 지역을 교체해도 출발지와 방문 일시 및 나머지 조건을 보존하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "성수"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "망원으로 바꾸자 나머지는 그대로"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "망원"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "성수"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
+---
+"id": "ext-region-change-05"
+"endpoint": "extract"
+"case": "region-change"
+"source": "synthetic"
+"intent": "방문 지역을 교체해도 출발지와 방문 일시 및 나머지 조건을 보존하는지 확인한다."
+"input":
+  "date": "2026-10-19"
+  "prev_slot":
+    "origin": "서울역"
+    "region": "대전"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "prev_query": "가성비 좋은"
+  "chat": "대전 말고 전주에서 놀자"
+"expected":
+  "final_slot":
+    "origin": "서울역"
+    "region": "전주"
+    "datetime": "2026-10-24T14:00:00"
+    "available_time": "360"
+    "category":
+    - "맛집"
+  "query_includes":
+  - "가성비"
+  "query_excludes":
+  - "대전"
+  "bot_message":
+    "asks_time": false
+    "asks_date": false
+    "states_basis_time": null
