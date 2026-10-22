@@ -17,7 +17,7 @@ _VIDEO_TIMEOUT = 120.0
 # 기본값(6)을 그대로 두면 모르는 사이 최대 6번 두드려서, 요금제상 영원히 안
 # 되는 요청에도 429 하나 받는 데 35초가 걸렸다(verify-place 실측).
 # 전체 시간은 각 서비스의 asyncio.wait_for 가 자른다.
-_ATTEMPTS = 2
+_ATTEMPTS = 1
 
 
 @lru_cache(maxsize=1)
