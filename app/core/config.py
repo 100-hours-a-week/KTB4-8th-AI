@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str
     GOOGLE_MODEL: str = "gemini-3.5-flash-lite"
     LLM_PROVIDER: Literal["google", "local"] = "google"
-    TIMEOUT_ANALYZE_VIDEO: int = 120
+    TIMEOUT_ANALYZE_VIDEO: int = 150
     TIMEOUT_VERIFY_PLACE: int = 60
     TIMEOUT_EXTRACT: int = 30
     TIMEOUT_EMBED_PLACES: int = 60
