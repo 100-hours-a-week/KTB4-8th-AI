@@ -14,14 +14,16 @@ class Settings(BaseSettings):
     TIMEOUT_EXTRACT: int = 30
     TIMEOUT_EMBED_PLACES: int = 60
 
-    # recommend-courses 는 챗봇 화면의 동기 경로라 전체 15초 deadline 안에서
+    # recommend-courses 는 챗봇 화면의 동기 경로라 전체 deadline 안에서
     # 구간별 예산을 나눠 쓴다(docs/6 5-3). 예산을 넘긴 구간은 실패 대신 LLM 을
     # 쓰지 않는 폴백으로 넘어간다(docs/6 5-6).
     # 고정 분할이 아니라 "남은 시간"에서 떼어 준다 — gemini-3.8-flash 실측이
     # 재순위 4~5초·조합 5초라, 고정 4/5초로 자르면 거의 항상 폴백이 됐다.
-    TIMEOUT_RECOMMEND_COURSES: float = 15.0
+    # 15초에서 25초로 늘렸다 — 10/23 운영에서 재순위 4.6초 뒤 조합이 8.4초에
+    # 끊겨 규칙 조합으로 떨어졌다. 백엔드가 이 요청을 기다리는 시간보다 짧아야 한다.
+    TIMEOUT_RECOMMEND_COURSES: float = 25.0
     RECOMMEND_BUDGET_RETRIEVAL: float = 1.5  # 쿼리 임베딩 + Chroma 검색, 상한
-    RECOMMEND_BUDGET_RERANK: float = 6.5  # 상한. 조합 몫을 남기도록 더 줄어들 수 있다
+    RECOMMEND_BUDGET_RERANK: float = 10.0  # 상한. 조합 몫을 남기도록 더 줄어들 수 있다
     RECOMMEND_BUDGET_MAP: float = 3.0  # 상한. 남은 시간이 적으면 줄어든다
     # 남은 시간이 이보다 적으면 LLM 을 부르지 않고 바로 폴백한다
     RECOMMEND_MIN_LLM_SECONDS: float = 2.0
