@@ -17,7 +17,7 @@ verify-place 와 같은 기준이고, API 시트에 이 엔드포인트의 502 �
 바꿔 프롬프트에 넣는다(_hours_text).
 
 코스 추천도(match_score)는 후보 압축 때 Chroma 가 준 유사도로 계산한다. 압축에
-쓴 벡터(query + 취향)와 같은 기준이라 코스 순서와 점수가 어긋나지 않는다.
+쓴 벡터(query + 카테고리 + 취향)와 같은 기준이라 코스 순서와 점수가 어긋나지 않는다.
 """
 
 import asyncio
@@ -36,6 +36,7 @@ from app.prompts.loader import load_prompt
 from app.retrieval.chroma_store import get_embeddings, search_places
 from app.retrieval.embedder import get_embedder
 from app.schemas.business_hours import BusinessHours
+from app.schemas.category import CATEGORY_DESCRIPTIONS
 from app.schemas.extract import has_visit_time
 from app.schemas.recommend_courses import (
     ComposeLLM,
@@ -49,9 +50,12 @@ from app.services import course_builder as cb
 
 _ENDPOINT = "recommend-courses"
 
-# 이번 대화 조건과 장기 취향을 섞는 비율. 조건이 우선이다 — "오늘은 조용한 데"
-# 라고 했는데 평소 취향인 핫플이 앞서면 요청을 무시한 추천이 된다.
-_QUERY_WEIGHT = 0.7
+# 압축 기준 벡터의 재료별 비율. 이번 대화 조건이 우선이다 — "오늘은 조용한 데"
+# 라고 했는데 평소 취향인 핫플이 앞서면 요청을 무시한 추천이 된다. 카테고리도
+# 요청 조건이라 취향보다 높게 둔다. 없는 재료는 빼고 남은 것끼리 비율을 다시
+# 나눈다(query 없이 카테고리·취향만 오면 0.6 / 0.4). 임의 초기값이다 — 벤치로
+# 0.4/0.4/0.2 와 비교해 조정한다.
+_WEIGHTS = {"query": 0.5, "category": 0.3, "taste": 0.2}
 
 # 전체 deadline 에서 직렬화·네트워크 몫으로 남겨두는 시간(docs/6 5-3 "여유")
 _SAFETY_SECONDS = 1.0
@@ -81,11 +85,44 @@ def _mean(vectors: list[list[float]]) -> list[float]:
     return [sum(xs) / len(vectors) for xs in zip(*vectors)]
 
 
-def _combine(query_vec: list[float] | None, taste_vec: list[float] | None) -> list[float] | None:
-    if query_vec is None or taste_vec is None:
-        return query_vec or taste_vec
-    q, t = _normalize(query_vec), _normalize(taste_vec)
-    return [_QUERY_WEIGHT * a + (1 - _QUERY_WEIGHT) * b for a, b in zip(q, t)]
+def _combine(parts: dict[str, list[float] | None]) -> list[float] | None:
+    present = {name: _normalize(v) for name, v in parts.items() if v is not None}
+    if not present:
+        return None
+    total = sum(_WEIGHTS[name] for name in present)
+    weighted = [[_WEIGHTS[name] / total * x for x in v] for name, v in present.items()]
+    return [sum(xs) for xs in zip(*weighted)]
+
+
+# 카테고리 설명문은 고정 문장이라 벡터도 바뀌지 않는다. 처음 쓰일 때 임베딩해
+# 프로세스 메모리에 둔다. 실패한 카테고리는 넣지 않아 다음 요청에서 다시 부른다.
+_category_vecs: dict[str, list[float]] = {}
+
+
+async def _category_vec(categories: list[str] | None) -> list[float] | None:
+    """요청 카테고리 설명문 벡터의 평균. [] 와 null("아무거나")·"기타"만이면 None.
+
+    실패하면 카테고리 없이 진행한다 — 이것 때문에 압축 전체를 버리면 추천도가
+    전부 null 이 된다.
+    """
+    names = [c for c in dict.fromkeys(categories or []) if c in CATEGORY_DESCRIPTIONS]
+    if not names:
+        return None
+    todo = [n for n in names if n not in _category_vecs]
+    if todo:
+        embedder = get_embedder()
+        try:
+            vecs = await asyncio.gather(*(embedder.aembed_query(CATEGORY_DESCRIPTIONS[n]) for n in todo))
+        except Exception as exc:
+            logger.warning("%s 카테고리 벡터 실패, 카테고리 없이 진행: %r", _ENDPOINT, exc)
+            return None
+        _category_vecs.update(zip(todo, vecs))
+    return _mean([_normalize(_category_vecs[n]) for n in names])
+
+
+async def _query_vec(query: str) -> list[float] | None:
+    # 검색용은 embed_query — 저장용 embed_documents 와 벡터가 다르다(embedder.py).
+    return await get_embedder().aembed_query(query) if query.strip() else None
 
 
 Similarities = dict[str, float]  # place_id → 압축 기준 벡터와의 코사인 유사도
@@ -100,10 +137,10 @@ async def _search(
     history_vecs = await asyncio.to_thread(get_embeddings, history_ids)
     taste_vec = _mean(history_vecs) if history_vecs else None
 
-    # 검색용은 embed_query — 저장용 embed_documents 와 벡터가 다르다(embedder.py).
-    query_vec = await get_embedder().aembed_query(req.query) if req.query.strip() else None
+    # 둘 다 임베딩 API 를 부를 수 있어 동시에 — 걸리는 시간은 느린 쪽 하나만큼.
+    query_vec, category_vec = await asyncio.gather(_query_vec(req.query), _category_vec(req.category))
 
-    vector = _combine(query_vec, taste_vec)
+    vector = _combine({"query": query_vec, "category": category_vec, "taste": taste_vec})
     if vector is None:
         return candidates, {}
 
