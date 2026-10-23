@@ -56,10 +56,7 @@ def needs_map_api(a: LatLng, b: LatLng) -> bool:
     return distance_m(a, b) > WALKING_MAX_METERS
 
 
-def coord(c: RecommendCandidate) -> LatLng | None:
-    """좌표가 없는 후보는 None. BE가 장소 좌표를 아직 모으지 못해 비워 보낼 수 있다(임시)."""
-    if c.lat is None or c.lng is None:
-        return None
+def coord(c: RecommendCandidate) -> LatLng:
     return c.lat, c.lng
 
 
@@ -77,9 +74,8 @@ def order_by_distance(picks: list[Pick], origin: LatLng | None) -> list[Pick]:
     """가까운 곳부터 방문하도록 정렬한다(IA_SRS AI-012, 최근접 이웃).
 
     출발지가 있으면 거기서, 없으면 모델이 첫 번째로 둔 장소에서 시작한다.
-    좌표 없는 장소가 하나라도 있으면 거리를 잴 수 없어 모델이 정한 순서를 그대로 둔다.
     """
-    if len(picks) <= 1 or any(coord(p.candidate) is None for p in picks):
+    if len(picks) <= 1:
         return list(picks)
     remaining = list(picks)
     if origin is None:
@@ -96,13 +92,12 @@ def order_by_distance(picks: list[Pick], origin: LatLng | None) -> list[Pick]:
 
 
 def legs(picks: list[Pick], origin: LatLng | None) -> list[tuple[LatLng, LatLng] | None]:
-    """장소마다 직전 지점에서 오는 구간. 출발지 없는 첫 장소나 좌표 없는 구간은 None(이동 0분)."""
+    """장소마다 직전 지점에서 오는 구간. 출발지 없는 첫 장소는 None(이동 0분)."""
     result: list[tuple[LatLng, LatLng] | None] = []
     here = origin
     for p in picks:
-        there = coord(p.candidate)
-        result.append((here, there) if here is not None and there is not None else None)
-        here = there
+        result.append((here, coord(p.candidate)) if here is not None else None)
+        here = coord(p.candidate)
     return result
 
 
@@ -168,7 +163,6 @@ def rule_based_groups(
 
     적합도 순으로 코스의 첫 장소를 고르고, 그 주변에서 가까운 순으로 시간이
     허락하는 만큼 붙인다. 코스끼리 장소가 겹치지 않게 해 서로 다른 코스를 만든다.
-    좌표가 없으면 거리를 잴 수 없어 적합도 순으로 붙이고 이동 시간은 0분으로 본다.
     """
     limit = available_minutes
     pool = list(ranked)
@@ -178,12 +172,8 @@ def rule_based_groups(
         group, used = [seed], stay_minutes
         while pool and len(group) < MAX_PLACES_PER_COURSE:
             here = coord(group[-1])
-            if here is None or any(coord(c) is None for c in pool):
-                nearest, move = pool[0], 0
-            else:
-                nearest = min(pool, key=lambda c: distance_m(here, coord(c)))
-                move = estimate_minutes(here, coord(nearest))
-            cost = move + stay_minutes
+            nearest = min(pool, key=lambda c: distance_m(here, coord(c)))
+            cost = estimate_minutes(here, coord(nearest)) + stay_minutes
             if limit is not None and used + cost > limit:
                 break
             pool.remove(nearest)
