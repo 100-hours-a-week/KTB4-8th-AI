@@ -13,15 +13,17 @@ def _to_hhmm(value):
 
 
 def _merge_split_midnight(ranges):
-    """백엔드가 쪼갠 자정 마감 구간을 한 구간으로 되돌린다.
+    """백엔드가 쪼갠 자정 넘김 구간을 우리 표현으로 되돌린다.
 
-    17:00~00:00 을 {17:00:00, 23:59:59.999999999} + {00:00:00, 00:00:00} 두 구간으로
-    보낸다(10/22 실측). 같은 날에 23:59:59 마감 구간이 있을 때만 손댄다 — 00:00~00:00
-    하나만 온 날은 24시간 영업일 수 있어 지우면 안 된다.
+    백엔드는 자정 넘김 영업을 그날 몫 {17:00:00, 23:59:59.999999999} 과 다음 날 몫
+    {00:00:00, 01:00:00} 으로 나눠 보내고, 자정에 닫는 가게는 다음 날 몫이 길이 0 인
+    {00:00:00, 00:00:00} 이 된다(10/22·10/23 실측).
+    - 23:59:59.x 마감은 자정 마감(00:00)으로 바꾼다.
+    - {00:00, 00:00} 은 언제나 지운다. 그것만 있던 날은 [] (휴무)가 된다 — 실제로 휴무일
+      앞날의 꼬리였다(용산은행나무포차 일요일). 24시간 영업은 00:00~23:59 로 오므로
+      (verify_place_structure.yaml 과 같은 약속) 여기에 걸리지 않는다.
     """
     if not isinstance(ranges, list):
-        return ranges
-    if not any(isinstance(r, dict) and str(r.get("close_time", "")).startswith("23:59:59") for r in ranges):
         return ranges
     merged = []
     for r in ranges:
@@ -30,7 +32,7 @@ def _merge_split_midnight(ranges):
             continue
         open_time, close_time = str(r.get("open_time", "")), str(r.get("close_time", ""))
         if open_time.startswith("00:00") and close_time.startswith("00:00"):
-            continue  # 쪼개진 자정 뒤쪽, 길이 0
+            continue  # 전날 자정 마감의 꼬리, 길이 0
         if close_time.startswith("23:59:59"):
             r = {**r, "close_time": "00:00"}
         merged.append(r)
