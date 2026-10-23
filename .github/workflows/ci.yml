@@ -22,10 +22,12 @@ on:
     branches:
       - 'feature/**'
       - main
+      - develop
 
   pull_request:
     branches:
       - main
+      - develop
     types:
       - opened
       - synchronize
@@ -97,6 +99,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Verify metrics and existing API contracts
+        run: uv run --frozen pytest tests/test_metrics.py
+
       # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
       # - name: Ruff lint
       #   run: uv run ruff check .
@@ -150,6 +155,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Verify metrics and existing API contracts
+        run: uv run --frozen pytest tests/test_metrics.py
+
       # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
       # - name: Ruff lint
       #   run: uv run ruff check .
@@ -181,14 +189,17 @@ jobs:
   # ============================================================
 
   main-image:
-    name: Main - Build and Push Image
+    name: ${{ github.ref == 'refs/heads/develop' && 'Dev - Build and Push Image' || 'Main - Build and Push Image' }}
 
-    # main Branch에 Commit이 반영되었을 때만 실행
+    # main은 V1 운영, develop은 V2 개발 이미지 후보를 게시한다.
     if: >
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/main'
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
 
     runs-on: ubuntu-latest
+    concurrency:
+      group: ai-image-${{ github.ref }}
+      cancel-in-progress: true
 
     # contents: read
     #   → Repository Source Checkout
@@ -225,6 +236,9 @@ jobs:
       # uv.lock에 고정된 Dependency 설치
       - name: Install dependencies
         run: uv sync --frozen
+
+      - name: Verify metrics and existing API contracts
+        run: uv run --frozen pytest tests/test_metrics.py
 
       # TODO(AI): Ruff/Pytest 의존성과 테스트 코드가 추가되면 활성화한다.
       # - name: Ruff lint

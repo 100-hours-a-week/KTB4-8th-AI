@@ -1,0 +1,590 @@
+"id": "cp-time-180-01"
+"endpoint": "compose"
+"case": "time-180"
+"source": "keepgo"
+"intent": "외출 가능 시간 180분 안에서 영업시간과 이동을 고려한 코스를 구성하는지 확인한다."
+"input":
+  "query": "가성비 좋은"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-09T19:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-04"
+  - "kg-18"
+  - "kg-14"
+  - "kg-15"
+  - "kg-17"
+  - "kg-16"
+"expected": {}
+"note": "keepgo 요청의 정성 조건과 카테고리 및 방문 일시를 유지하고 외출 가능 시간과 후보 목록을 합성했다."
+---
+"id": "cp-time-360-01"
+"endpoint": "compose"
+"case": "time-360"
+"source": "keepgo"
+"intent": "외출 가능 시간 360분 안에서 영업시간과 이동을 고려한 코스를 구성하는지 확인한다."
+"input":
+  "query": "맛있는"
+  "category": null
+  "datetime": "2026-10-03T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-30"
+  - "kg-07"
+  - "kg-25"
+  - "kg-19"
+  - "kg-03"
+  - "kg-47"
+  - "kg-48"
+"expected": {}
+"note": "keepgo 요청의 정성 조건과 카테고리 및 방문 일시를 유지하고 외출 가능 시간과 후보 목록을 합성했다."
+---
+"id": "cp-time-540-01"
+"endpoint": "compose"
+"case": "time-540"
+"source": "keepgo"
+"intent": "외출 가능 시간 540분 안에서 영업시간과 이동을 고려한 코스를 구성하는지 확인한다."
+"input":
+  "query": "아이와 함께 가기 좋은 실내"
+  "category": null
+  "datetime": "2026-10-01T14:00:00"
+  "available_time": "540"
+  "candidate_ids":
+  - "kg-19"
+  - "kg-03"
+  - "kg-48"
+  - "kg-47"
+  - "kg-06"
+  - "kg-07"
+  - "kg-25"
+"expected": {}
+"note": "keepgo 요청의 정성 조건과 카테고리 및 방문 일시를 유지하고 외출 가능 시간과 후보 목록을 합성했다."
+---
+"id": "cp-time-180-02"
+"endpoint": "compose"
+"case": "time-180"
+"source": "synthetic"
+"intent": "외출 가능 시간 180분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "성수에서 뷰티 팝업 위주로 짧게 돌고 싶어"
+  "category":
+  - "팝업"
+  "datetime": "2026-10-24T13:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-47"
+  - "kg-48"
+  - "kg-06"
+  - "kg-19"
+  - "kg-03"
+  - "kg-07"
+  - "kg-25"
+"expected": {}
+---
+"id": "cp-time-180-03"
+"endpoint": "compose"
+"case": "time-180"
+"source": "synthetic"
+"intent": "외출 가능 시간 180분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "전주에서 산책하고 축제 구경"
+  "category": null
+  "datetime": "2026-10-25T11:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-45"
+  - "kg-46"
+  - "kg-44"
+"expected": {}
+---
+"id": "cp-time-180-04"
+"endpoint": "compose"
+"case": "time-180"
+"source": "synthetic"
+"intent": "외출 가능 시간 180분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "동대문에서 빵 사고 구경도 조금"
+  "category": null
+  "datetime": "2026-10-20T12:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-17"
+  - "kg-16"
+  - "kg-15"
+  - "kg-14"
+  - "kg-04"
+  - "kg-18"
+"expected": {}
+---
+"id": "cp-time-180-05"
+"endpoint": "compose"
+"case": "time-180"
+"source": "synthetic"
+"intent": "외출 가능 시간 180분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "대전에서 저녁 먹고 한 군데 더"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-21T18:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-38"
+  - "kg-41"
+  - "kg-35"
+  - "kg-39"
+  - "kg-34"
+  - "kg-33"
+"expected": {}
+---
+"id": "cp-time-360-02"
+"endpoint": "compose"
+"case": "time-360"
+"source": "synthetic"
+"intent": "외출 가능 시간 360분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "골동품 구경하고 밥도 먹을래"
+  "category": null
+  "datetime": "2026-10-24T11:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-16"
+  - "kg-17"
+  - "kg-15"
+  - "kg-14"
+  - "kg-04"
+  - "kg-18"
+"expected": {}
+---
+"id": "cp-time-360-03"
+"endpoint": "compose"
+"case": "time-360"
+"source": "synthetic"
+"intent": "외출 가능 시간 360분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "전주에서 여유롭게 걷고 싶어"
+  "category":
+  - "명소"
+  - "팝업"
+  "datetime": "2026-10-25T10:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-45"
+  - "kg-46"
+  - "kg-44"
+"expected": {}
+---
+"id": "cp-time-360-04"
+"endpoint": "compose"
+"case": "time-360"
+"source": "synthetic"
+"intent": "외출 가능 시간 360분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "대전 노포 음식 위주로"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-20T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-36"
+  - "kg-38"
+  - "kg-34"
+  - "kg-39"
+  - "kg-33"
+  - "kg-35"
+  - "kg-41"
+"expected": {}
+---
+"id": "cp-time-360-05"
+"endpoint": "compose"
+"case": "time-360"
+"source": "synthetic"
+"intent": "외출 가능 시간 360분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "팝업 들르고 중간에 밥 먹기"
+  "category":
+  - "팝업"
+  - "맛집"
+  "datetime": "2026-10-21T14:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-48"
+  - "kg-47"
+  - "kg-06"
+  - "kg-19"
+  - "kg-03"
+  - "kg-07"
+  - "kg-30"
+  - "kg-25"
+"expected": {}
+---
+"id": "cp-time-540-02"
+"endpoint": "compose"
+"case": "time-540"
+"source": "synthetic"
+"intent": "외출 가능 시간 540분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "성수에서 하루 종일 산책하고 구경"
+  "category": null
+  "datetime": "2026-10-24T09:30:00"
+  "available_time": "540"
+  "candidate_ids":
+  - "kg-25"
+  - "kg-07"
+  - "kg-02"
+  - "kg-05"
+  - "kg-19"
+  - "kg-03"
+  - "kg-47"
+  - "kg-48"
+  - "kg-30"
+"expected": {}
+---
+"id": "cp-time-540-03"
+"endpoint": "compose"
+"case": "time-540"
+"source": "synthetic"
+"intent": "외출 가능 시간 540분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "전주에서 천천히 하루 보내고 싶어"
+  "category": null
+  "datetime": "2026-10-25T09:00:00"
+  "available_time": "540"
+  "candidate_ids":
+  - "kg-45"
+  - "kg-46"
+  - "kg-44"
+"expected": {}
+---
+"id": "cp-time-540-04"
+"endpoint": "compose"
+"case": "time-540"
+"source": "synthetic"
+"intent": "외출 가능 시간 540분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "동대문 볼거리랑 식사 여유롭게"
+  "category": null
+  "datetime": "2026-10-20T10:00:00"
+  "available_time": "540"
+  "candidate_ids":
+  - "kg-17"
+  - "kg-16"
+  - "kg-15"
+  - "kg-14"
+  - "kg-04"
+  - "kg-18"
+"expected": {}
+---
+"id": "cp-time-540-05"
+"endpoint": "compose"
+"case": "time-540"
+"source": "synthetic"
+"intent": "외출 가능 시간 540분 이내로 이동과 체류를 배분하고 코스당 장소 수 및 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "대전 노포 구경하면서 식사도 하고 싶어"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-21T11:00:00"
+  "available_time": "540"
+  "candidate_ids":
+  - "kg-36"
+  - "kg-38"
+  - "kg-39"
+  - "kg-34"
+  - "kg-35"
+  - "kg-41"
+  - "kg-33"
+"expected": {}
+---
+"id": "cp-few-candidates-01"
+"endpoint": "compose"
+"case": "few-candidates"
+"source": "keepgo"
+"intent": "후보가 한두 곳이어도 장소를 새로 만들거나 반복하지 않고 방문 가능한 후보로 코스를 구성하는지 확인한다."
+"input":
+  "query": "조용한"
+  "category":
+  - "카페"
+  "datetime": "2026-10-03T14:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-17"
+"expected": {}
+---
+"id": "cp-few-candidates-02"
+"endpoint": "compose"
+"case": "few-candidates"
+"source": "keepgo"
+"intent": "후보가 한두 곳이어도 장소를 새로 만들거나 반복하지 않고 방문 가능한 후보로 코스를 구성하는지 확인한다."
+"input":
+  "query": "팝업 구경"
+  "category":
+  - "팝업"
+  "datetime": "2026-10-05T13:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-47"
+  - "kg-48"
+"expected": {}
+---
+"id": "cp-few-candidates-03"
+"endpoint": "compose"
+"case": "few-candidates"
+"source": "synthetic"
+"intent": "후보가 한두 곳이어도 장소를 새로 만들거나 반복하지 않고 방문 가능한 후보로 코스를 구성하는지 확인한다."
+"input":
+  "query": "호수 보면서 잠깐 걷고 싶어"
+  "category":
+  - "명소"
+  "datetime": "2026-10-24T12:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-45"
+"expected": {}
+---
+"id": "cp-few-candidates-04"
+"endpoint": "compose"
+"case": "few-candidates"
+"source": "synthetic"
+"intent": "후보가 한두 곳이어도 장소를 새로 만들거나 반복하지 않고 방문 가능한 후보로 코스를 구성하는지 확인한다."
+"input":
+  "query": "국밥 먹고 포차 들르고 싶어"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-25T18:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-39"
+  - "kg-41"
+"expected": {}
+---
+"id": "cp-few-candidates-05"
+"endpoint": "compose"
+"case": "few-candidates"
+"source": "synthetic"
+"intent": "후보가 한두 곳이어도 장소를 새로 만들거나 반복하지 않고 방문 가능한 후보로 코스를 구성하는지 확인한다."
+"input":
+  "query": "아이랑 박물관 가고 싶어"
+  "category":
+  - "전시"
+  "datetime": "2026-10-26T12:00:00"
+  "available_time": "180"
+  "candidate_ids":
+  - "kg-20"
+"expected": {}
+"note": "유일한 후보 kg-20이 월요일 정기 휴무인 경우이므로 방문 불가능한 장소로 코스를 채우면 안 된다."
+---
+"id": "cp-far-apart-01"
+"endpoint": "compose"
+"case": "far-apart"
+"source": "keepgo"
+"intent": "주 지역과 다른 도시의 후보가 적합도 순서 중간에 있어도 먼 장소를 한 코스에 섞지 않는지 확인한다."
+"input":
+  "query": "산책하기 좋은"
+  "category":
+  - "맛집"
+  "datetime": "2026-10-03T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-25"
+  - "kg-33"
+  - "kg-07"
+  - "kg-30"
+  - "kg-47"
+  - "kg-48"
+"expected":
+  "intended_far_ids":
+  - "kg-33"
+"note": "keepgo 요청에 시각이 없어 \"12:00\"을 합성했다. kg-33은 대전, 주 후보는 성수다."
+---
+"id": "cp-far-apart-02"
+"endpoint": "compose"
+"case": "far-apart"
+"source": "synthetic"
+"intent": "주 지역과 다른 도시의 후보가 적합도 순서 중간에 있어도 먼 장소를 한 코스에 섞지 않는지 확인한다."
+"input":
+  "query": "대전에서 밥 먹고 구경"
+  "category": null
+  "datetime": "2026-10-24T13:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-38"
+  - "kg-41"
+  - "kg-47"
+  - "kg-35"
+  - "kg-39"
+  - "kg-48"
+"expected":
+  "intended_far_ids":
+  - "kg-47"
+  - "kg-48"
+---
+"id": "cp-far-apart-03"
+"endpoint": "compose"
+"case": "far-apart"
+"source": "synthetic"
+"intent": "주 지역과 다른 도시의 후보가 적합도 순서 중간에 있어도 먼 장소를 한 코스에 섞지 않는지 확인한다."
+"input":
+  "query": "전주에서 산책하고 축제 구경"
+  "category": null
+  "datetime": "2026-10-25T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-45"
+  - "kg-46"
+  - "kg-07"
+  - "kg-44"
+"expected":
+  "intended_far_ids":
+  - "kg-07"
+---
+"id": "cp-far-apart-04"
+"endpoint": "compose"
+"case": "far-apart"
+"source": "synthetic"
+"intent": "주 지역과 다른 도시의 후보가 적합도 순서 중간에 있어도 먼 장소를 한 코스에 섞지 않는지 확인한다."
+"input":
+  "query": "동대문에서 동네 구경하고 밥 먹기"
+  "category": null
+  "datetime": "2026-10-20T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-16"
+  - "kg-17"
+  - "kg-39"
+  - "kg-15"
+  - "kg-14"
+  - "kg-04"
+  - "kg-45"
+"expected":
+  "intended_far_ids":
+  - "kg-39"
+  - "kg-45"
+---
+"id": "cp-far-apart-05"
+"endpoint": "compose"
+"case": "far-apart"
+"source": "synthetic"
+"intent": "주 지역과 다른 도시의 후보가 적합도 순서 중간에 있어도 먼 장소를 한 코스에 섞지 않는지 확인한다."
+"input":
+  "query": "성수에서 팝업 위주로 돌래"
+  "category":
+  - "팝업"
+  "datetime": "2026-10-21T14:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-47"
+  - "kg-48"
+  - "kg-19"
+  - "kg-44"
+  - "kg-03"
+  - "kg-06"
+  - "kg-07"
+"expected":
+  "intended_far_ids":
+  - "kg-44"
+---
+"id": "cp-multi-category-01"
+"endpoint": "compose"
+"case": "multi-category"
+"source": "synthetic"
+"intent": "복수 카테고리의 후보를 요청에 맞게 조합하고 이동 및 영업시간과 장소 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "팝업 보고 밥도 먹자"
+  "category":
+  - "팝업"
+  - "맛집"
+  "datetime": "2026-10-24T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-47"
+  - "kg-48"
+  - "kg-30"
+  - "kg-07"
+  - "kg-19"
+  - "kg-03"
+  - "kg-06"
+"expected": {}
+---
+"id": "cp-multi-category-02"
+"endpoint": "compose"
+"case": "multi-category"
+"source": "synthetic"
+"intent": "복수 카테고리의 후보를 요청에 맞게 조합하고 이동 및 영업시간과 장소 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "산책이랑 점심 식사 위주로"
+  "category":
+  - "명소"
+  - "맛집"
+  "datetime": "2026-10-25T11:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-25"
+  - "kg-07"
+  - "kg-30"
+  - "kg-02"
+  - "kg-05"
+"expected": {}
+---
+"id": "cp-multi-category-03"
+"endpoint": "compose"
+"case": "multi-category"
+"source": "synthetic"
+"intent": "복수 카테고리의 후보를 요청에 맞게 조합하고 이동 및 영업시간과 장소 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "구경하고 카페 갔다가 밥 먹자"
+  "category":
+  - "명소"
+  - "카페"
+  - "맛집"
+  "datetime": "2026-10-20T12:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-16"
+  - "kg-17"
+  - "kg-15"
+  - "kg-14"
+  - "kg-04"
+  - "kg-18"
+"expected": {}
+---
+"id": "cp-multi-category-04"
+"endpoint": "compose"
+"case": "multi-category"
+"source": "synthetic"
+"intent": "복수 카테고리의 후보를 요청에 맞게 조합하고 이동 및 영업시간과 장소 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "공원 걷다가 축제도 보고 싶어"
+  "category":
+  - "명소"
+  - "팝업"
+  "datetime": "2026-10-21T11:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-45"
+  - "kg-44"
+  - "kg-46"
+"expected": {}
+---
+"id": "cp-multi-category-05"
+"endpoint": "compose"
+"case": "multi-category"
+"source": "synthetic"
+"intent": "복수 카테고리의 후보를 요청에 맞게 조합하고 이동 및 영업시간과 장소 중복 제한을 지키는지 확인한다."
+"input":
+  "query": "쇼핑하고 팝업도 보고 밥 먹고 싶어"
+  "category":
+  - "기타"
+  - "팝업"
+  - "맛집"
+  "datetime": "2026-10-22T13:00:00"
+  "available_time": "360"
+  "candidate_ids":
+  - "kg-02"
+  - "kg-05"
+  - "kg-47"
+  - "kg-48"
+  - "kg-07"
+  - "kg-30"
+  - "kg-19"
+"expected": {}

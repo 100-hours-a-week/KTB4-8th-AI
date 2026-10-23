@@ -28,14 +28,20 @@ TODO: 해외 주소 — 검색 결과에 뉴욕·LA 주소가 나온 적이 있�
 
 import asyncio
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from langsmith import traceable
 
 from app.core.config import settings
-from app.core.exceptions import AIServerError, LLMInvalidResponseError, MapAPIError
-from app.core.logging import log_llm
+from app.core.exceptions import AIServerError, LLMInvalidResponseError
+from app.core.logging import log_llm, logger
 from app.integrations.map_client import geocode
 from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
+from app.schemas.business_hours import BusinessHours
 from app.schemas.verify_place import (
+    BusinessHoursLLM,
     GroundedPlace,
     PlaceCandidate,
     VerifyPlaceData,
@@ -45,6 +51,9 @@ from app.schemas.verify_place import (
 
 _ENDPOINT = "verify-place"
 _SEARCH_TOOL = {"google_search": {}}
+# 영업시간 데이터가 Asia/Seoul 기준이다. 서버(컨테이너)는 UTC 일 수 있어서
+# date.today() 를 쓰면 한국 자정~오전 9시에 하루 어긋난다.
+_KST = ZoneInfo("Asia/Seoul")
 
 
 def _or_none(value) -> str:
@@ -57,6 +66,7 @@ def _event_period(req: VerifyPlaceRequest) -> str:
     return "없음"
 
 
+@traceable(name="verify-place:search", run_type="chain")
 async def _search(req: VerifyPlaceRequest) -> str:
     """1단계: 그라운딩으로 웹검색. 결과는 자유 서술 텍스트."""
     prompt = load_prompt(
@@ -80,6 +90,7 @@ async def _search(req: VerifyPlaceRequest) -> str:
     return message.text
 
 
+@traceable(name="verify-place:structure", run_type="chain")
 async def _structure(req: VerifyPlaceRequest, search_result: str) -> VerifyPlaceLLM:
     """2단계: 검색 결과를 스키마로 옮긴다. 검색 도구는 쓰지 않는다."""
     prompt = load_prompt(
@@ -128,6 +139,20 @@ def _apply_request_dates(req: VerifyPlaceRequest, place: GroundedPlace) -> Groun
     return place.model_copy(update=update) if update else place
 
 
+def _to_business_hours(hours: BusinessHoursLLM | None) -> BusinessHours | None:
+    """모델이 적은 영업시간을 응답 형식으로 바꾼다.
+
+    모델은 옮겨 적기만 하고, 정리는 여기서 한다 — 예외일 목록을 날짜 dict 로
+    바꾸고, 오늘(한국 시간) 이전 날짜는 버린다. 같은 날짜가 두 번 오면 뒤의
+    것을 쓴다. timezone·estimated 는 기본값(Asia/Seoul, false)이다.
+    """
+    if hours is None:
+        return None
+    today = datetime.now(_KST).date()
+    exceptions = {day.date: day.hours for day in hours.exceptions if day.date >= today}
+    return BusinessHours(weekly_hours=hours.weekly_hours, exceptions=exceptions)
+
+
 async def _verify(req: VerifyPlaceRequest) -> VerifyPlaceData:
     search_result = await _search(req)
     grounded = await _structure(req, search_result)
@@ -150,18 +175,32 @@ async def _verify(req: VerifyPlaceRequest) -> VerifyPlaceData:
     # 주소가 좌표로 안 바뀐 후보만 뺀다(없는 주소). 순서는 유지되므로
     # 남은 것 중 첫 번째가 자동 채택값이다.
     candidates = [
-        PlaceCandidate(**p.model_dump(exclude={"evidence"}), lat=xy[0], lng=xy[1])
+        PlaceCandidate(
+            **p.model_dump(exclude={"evidence", "business_hours"}),
+            business_hours=_to_business_hours(p.business_hours),
+            lat=xy[0],
+            lng=xy[1],
+        )
         for p, xy in zip(places, coords)
         if xy is not None
     ]
     if not candidates:
-        # 웹검색으론 있는데 좌표를 하나도 못 얻었다. exists=false 로 돌리면
-        # "없는 장소"로 오해되니, 지도 쪽 문제로 올린다.
-        raise MapAPIError("검색으로 찾은 장소의 주소를 좌표로 바꾸지 못했습니다")
+        # 웹검색으론 있는데 좌표를 하나도 못 얻었다(해외 주소 등). 지도 API
+        # 장애였다면 geocode 가 MapAPIError 를 이미 던졌으니, 여기 온 건 주소
+        # 자체가 안 바뀐 경우다. 예전엔 MapAPIError 로 올렸는데, 백엔드가 장애로
+        # 보고 재처리를 반복해도 풀리지 않아서 "확인 못 함"(not_found)으로 돌린다.
+        # 얼마나 자주 나오는지 셀 수 있게 로그를 남긴다.
+        logger.warning(
+            "verify-place address_unresolved place=%s addresses=%s",
+            req.place_name,
+            [p.address for p in places],
+        )
+        return VerifyPlaceData(exists=False, candidates=[])
 
     return VerifyPlaceData(exists=True, candidates=candidates)
 
 
+@traceable(name="verify-place", run_type="chain")
 async def verify_place(req: VerifyPlaceRequest) -> VerifyPlaceData:
     try:
         # 검색·구조화·좌표 조회를 합쳐 백엔드가 기다리는 시간 안에 끝낸다

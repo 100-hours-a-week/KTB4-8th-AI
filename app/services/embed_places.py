@@ -7,9 +7,16 @@ from app.core.config import settings
 from app.core.exceptions import InternalServerError
 from app.core.logging import log_llm
 from app.models.factory import to_domain_error
+from app.retrieval.chroma_store import delete_places as delete_from_store
 from app.retrieval.chroma_store import upsert_places
 from app.retrieval.embedder import get_embedder
-from app.schemas.embed_places import EmbedPlacesData, EmbedPlacesRequest, PlaceToEmbed
+from app.schemas.embed_places import (
+    EmbedPlacesData,
+    EmbedPlacesDeleteData,
+    EmbedPlacesDeleteRequest,
+    EmbedPlacesRequest,
+    PlaceToEmbed,
+)
 
 _ENDPOINT = "embed-places"
 
@@ -70,3 +77,22 @@ async def embed_places(req: EmbedPlacesRequest) -> EmbedPlacesData:
     # 저장이 upsert 라 같은 요청을 다시 보내도 결과가 같다. 실패 시 백엔드가
     # 그대로 재호출하면 된다.
     return EmbedPlacesData(embedded_count=len(places))
+
+
+async def delete_places(req: EmbedPlacesDeleteRequest) -> EmbedPlacesDeleteData:
+    # 같은 id 가 여러 번 와도 한 번만 센다(순서 유지). 저장 쪽 _prepare 와 같은 규칙.
+    place_ids = list(dict.fromkeys(req.place_ids))
+    # 빈 목록이면 Chroma 를 부르지 않는다. delete(ids=[]) 가 어떻게 동작하는지는
+    # 확인하지 않았다 — 버전에 따라 조건 없는 삭제처럼 동작할 위험을 피한다.
+    if not place_ids:
+        return EmbedPlacesDeleteData(deleted_count=0)
+
+    try:
+        # Chroma 클라이언트는 동기라 저장과 같이 스레드로 뺀다.
+        deleted = await asyncio.to_thread(delete_from_store, place_ids)
+    except Exception as exc:
+        raise InternalServerError(f"임베딩 삭제 실패: {exc}") from exc
+
+    # 삭제는 같은 요청을 다시 보내도 결과가 같다(이미 없는 id 는 세지 않음).
+    # 실패 시 백엔드가 그대로 재호출하면 된다.
+    return EmbedPlacesDeleteData(deleted_count=deleted)

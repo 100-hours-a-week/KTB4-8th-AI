@@ -6,6 +6,12 @@ from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
+
+class Coordinate(BaseModel):
+    """좌표"""
+    lat: float = Field(..., description="위도")
+    lng: float = Field(..., description="경도")
+
 ResponseMessage = Literal[
     "analyze_success",
     "verify_success",
@@ -13,6 +19,9 @@ ResponseMessage = Literal[
     "recommend_success",
     "embed_success",
     "cancel_accepted",
+    "recommend_not_found",
+    "recommend_cancel_accepted",
+    "recommend_failed",
     "embed_delete_success",
     "invalid_request",
     "validation_error",

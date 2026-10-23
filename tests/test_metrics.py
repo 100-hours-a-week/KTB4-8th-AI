@@ -1,6 +1,7 @@
 """Prometheus 지표(app/core/metrics.py) 시험. LLM 을 부르지 않는 경로만 쓴다."""
 
 import os
+import importlib
 import socket
 import urllib.request
 
@@ -20,7 +21,7 @@ from app.main import app
 from app.services import recommend_courses
 
 CANCEL_ROUTE = "/v1/recommend-courses/{request_id}/cancel"
-INTERACTIVE_ROUTES = {CANCEL_ROUTE, "/v1/embed-places"}
+INTERACTIVE_ROUTES = {CANCEL_ROUTE, "/v1/embed-places", "/v1/embed-places/delete"}
 
 
 def count(route, status, method="POST"):
@@ -66,7 +67,10 @@ def test_route_label_is_template_not_request_id(client):
 
 def test_validation_error_is_recorded_once_with_generation_class(client):
     before, before_hist = count("/v1/extract", "422"), bucket_count("/v1/extract")
-    assert client.post("/v1/extract", json={}).status_code == 422
+    response = client.post("/v1/extract", json={})
+    assert response.status_code == 422
+    assert response.json()["data"]["errors"]
+    assert all(set(error) == {"field", "reason"} for error in response.json()["data"]["errors"])
     assert count("/v1/extract", "422") == before + 1
     assert bucket_count("/v1/extract") == before_hist + 1
 
@@ -107,7 +111,37 @@ def test_metrics_server_exposes_contract_metrics(client):
         body = urllib.request.urlopen(f"http://127.0.0.1:{port}/metrics", timeout=5).read().decode()
     finally:
         server.shutdown()
+        server.server_close()
     assert 'keepgo_observability_info{capability="http",contract="1"} 1.0' in body
     assert "keepgo_http_requests_total{" in body
     assert 'keepgo_http_request_duration_seconds_bucket{le="+Inf"' in body or 'le="+Inf"' in body
     assert "_created" not in body
+
+
+def test_listener_failure_does_not_stop_api(monkeypatch):
+    main = importlib.import_module("app.main")
+
+    def unavailable(_port):
+        raise OSError("port already in use")
+
+    monkeypatch.setattr(main, "start_metrics_server", unavailable)
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == 200
+
+
+def test_lifespan_closes_listener_even_if_app_context_fails(monkeypatch):
+    main = importlib.import_module("app.main")
+    events = []
+
+    class Server:
+        def shutdown(self):
+            events.append("shutdown")
+
+        def server_close(self):
+            events.append("close")
+
+    monkeypatch.setattr(main, "start_metrics_server", lambda port: Server())
+    with pytest.raises(RuntimeError, match="context failed"):
+        with TestClient(app):
+            raise RuntimeError("context failed")
+    assert events == ["shutdown", "close"]

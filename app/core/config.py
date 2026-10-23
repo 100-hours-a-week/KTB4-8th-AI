@@ -4,10 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    METRICS_PORT: int = 9464
+
     GOOGLE_API_KEY: str
     GOOGLE_MODEL: str = "gemini-3.5-flash-lite"
     LLM_PROVIDER: Literal["google", "local"] = "google"
-    TIMEOUT_ANALYZE_VIDEO: int = 120
+    TIMEOUT_ANALYZE_VIDEO: int = 150
     TIMEOUT_VERIFY_PLACE: int = 60
     TIMEOUT_EXTRACT: int = 30
     TIMEOUT_EMBED_PLACES: int = 60
@@ -28,13 +30,11 @@ class Settings(BaseSettings):
     RECOMMEND_THINKING_BUDGET: int = 512
     # 벡터 검색으로 압축한 뒤 LLM 에 넘길 후보 수
     RECOMMEND_TOP_K: int = 15
-    # candidates 가 비어 있을 때 쓰는 웹검색 추천(임시, recommend_web.py)의 전체 제한 시간.
-    # 그라운딩 검색이 길어 15초 deadline 과 따로 둔다. 40초에서 운영 첫 호출이 끊겨(2026-10-03)
-    # 늘렸다. 백엔드 AI 클라이언트 read timeout(130초)·FE nginx(120초)보다 짧아야 한다.
-    TIMEOUT_RECOMMEND_WEB: float = 90.0
-    # 웹검색 추천의 코스 수·코스당 장소 수. 적을수록 검색이 줄어 빨라진다.
-    RECOMMEND_WEB_MAX_COURSES: int = 2
-    RECOMMEND_WEB_MAX_PLACES: int = 3
+    # 코스 추천도(match_score): 코사인 유사도를 이 구간에서 0~100 으로 선형 환산하고
+    # 밖은 0·100 으로 자른다. 유사도는 좁은 구간에 몰려서 그대로 ×100 하면 코스끼리
+    # 차이가 안 난다. 임의 초기값이다 — 실제 유사도 분포를 보고 조정한다.
+    RECOMMEND_SCORE_SIM_MIN: float = 0.5
+    RECOMMEND_SCORE_SIM_MAX: float = 0.9
 
     # 배치 분석: Gemini 호출 1번에 영상 몇 개를 넣을지. Gemini 2.5 이상은
     # 요청당 최대 10개라 이보다 크게는 못 한다 — 품질을 보고 줄이는 것만 가능.
@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # 위 묶음 호출을 동시에 몇 개까지 보낼지. 임의 초기값이다 — 30건 부하
     # 테스트(d5-3)로 429 여부를 보고 조정한다.
     ANALYZE_VIDEO_PARALLEL: int = 3
+    # 분석 뒤 장소 검증을 동시에 몇 건까지 보낼지. 검증 1건 = Gemini 2번(검색·구조화)
+    # + 지도 API 라 약 20~28초 걸린다. 10 이면 묶음 하나의 검증이 한 번에 끝난다.
+    # 속도 우선으로 잡은 값이다 — 429 가 보이면 이 값을 낮춘다.
+    VERIFY_PLACE_PARALLEL: int = 10
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"

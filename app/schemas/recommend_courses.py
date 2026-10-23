@@ -3,27 +3,23 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from app.schemas.business_hours import BusinessHours
 from app.schemas.category import PlaceCategory
-from app.schemas.common import APIResponse
+from app.schemas.common import APIResponse, Coordinate, ResponseMessage
 from app.schemas.extract import AvailableTime, VisitDatetime
 
 
 #요청 스키마
-class Coordinate(BaseModel):
-    """좌표"""
-    lat: float = Field(..., description="위도")
-    lng: float = Field(..., description="경도")
-
-
 class RecommendCandidate(BaseModel):
     """추천 후보 장소 모델"""
     place_id: str = Field(..., description="장소 식별자")
     place_name: str = Field(..., description="장소명")
     summary: str = Field(..., description="장소 특징 요약")
-    # 임시: BE가 장소 좌표를 아직 모으지 못해 비워 보낼 수 있다. 없으면 이동시간 없이 코스를 만든다.
-    lat: Optional[float] = Field(default=None, description="위도 (없으면 이동시간 계산 생략)")
-    lng: Optional[float] = Field(default=None, description="경도 (없으면 이동시간 계산 생략)")
-    business_hours: str = Field(..., description="영업시간 (원문 문자열)")
+    lat: float = Field(..., description="위도")
+    lng: float = Field(..., description="경도")
+    # analyze-video 응답의 business_hours 를 그대로 받는다. null 불가 — success 로
+    # 나온 장소는 영업시간이 항상 있다.
+    business_hours: BusinessHours = Field(..., description="영업시간 (7개 요일, 예외일, 추정 여부)")
 
 
 class HistoryPlace(BaseModel):
@@ -59,13 +55,22 @@ class CoursePlace(BaseModel):
 class Course(BaseModel):
     """코스 모델"""
     title: str = Field(..., description="코스 제목 (LLM 생성)")
+    # 확률이 아니다 — 유사도를 고정 구간으로 환산한 점수. 이름을 rate 가 아니라
+    # score 로 둔 것도 그래서다. 계산할 수 없으면 0 이 아니라 null: 0 은 "안
+    # 맞음"이라는 주장이라, 임베딩이 없어서 모르는 경우와 구분되지 않는다.
+    match_score: Optional[int] = Field(
+        default=None, ge=0, le=100,
+        description="코스 추천도(0~100). 요청 조건+취향과의 유사도. 계산할 수 없으면 null",
+    )
     places: list[CoursePlace] = Field(..., description="장소 목록. 방문 순서대로 정렬됨")
     total_duration_minutes: int = Field(..., description="이동+체류를 합한 총 소요 시간(분)")
 
 
 class RecommendCoursesData(BaseModel):
     """코스 추천 결과 모델"""
-    courses: list[Course] = Field(..., max_length=3, description="조건을 만족하는 코스 목록 (최대 3개)")
+    # 시트: 성공·없음·중단·실패 모두 200 이고, 실패 원인은 여기에 담는다.
+    error: Optional[ResponseMessage] = Field(default=None, description="recommend_failed 일 때 원인 코드")
+    courses: list[Course] = Field(default_factory=list, max_length=3, description="조건을 만족하는 코스 목록 (최대 3개)")
 
 
 RecommendCoursesResponse = APIResponse[RecommendCoursesData]

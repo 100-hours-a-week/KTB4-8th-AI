@@ -7,7 +7,9 @@ recommend_courses.py 에서 모델이 고른 장소를 받아 방문 순서·이
 
 import math
 from dataclasses import dataclass
+from datetime import datetime
 
+from app.schemas.extract import has_visit_time
 from app.schemas.recommend_courses import Course, CoursePlace, RecommendCandidate
 
 LatLng = tuple[float, float]
@@ -104,10 +106,12 @@ def legs(picks: list[Pick], origin: LatLng | None) -> list[tuple[LatLng, LatLng]
     return result
 
 
-def _start_minutes(visit_datetime: str | None) -> int:
-    hhmm = visit_datetime[11:16] if visit_datetime and len(visit_datetime) >= 16 else DEFAULT_START
-    hours, minutes = hhmm.split(":")
-    return int(hours) * 60 + int(minutes)
+def _start_minutes(visit_datetime: datetime | None) -> int:
+    # 00:00 은 "시간 모름" 약속이라 시각이 없을 때와 같이 기본 출발 시각을 쓴다.
+    if not has_visit_time(visit_datetime):
+        hours, minutes = DEFAULT_START.split(":")
+        return int(hours) * 60 + int(minutes)
+    return visit_datetime.hour * 60 + visit_datetime.minute
 
 
 def _clock(total_minutes: int) -> str:
@@ -119,7 +123,7 @@ def build_course(
     title: str,
     picks: list[Pick],
     travel: list[int],
-    visit_datetime: str | None,
+    visit_datetime: datetime | None,
     available_minutes: int | None,
 ) -> Course | None:
     """순서·이동시간이 정해진 장소로 코스를 만든다.

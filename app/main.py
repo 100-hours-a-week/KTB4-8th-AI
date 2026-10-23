@@ -39,13 +39,21 @@ def enable_langsmith() -> bool:
 
 enable_langsmith()
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    metrics_server = start_metrics_server(settings.METRICS_PORT)
-    yield
-    if metrics_server:
-        metrics_server.shutdown()
+    metrics_server = None
+    try:
+        metrics_server = start_metrics_server(settings.METRICS_PORT)
+    except OSError:
+        # Optional telemetry must not prevent the API from serving requests.
+        # Central scrape-down alerts expose a failed metrics listener.
+        logger.exception("Metrics listener could not start")
+    try:
+        yield
+    finally:
+        if metrics_server:
+            metrics_server.shutdown()
+            metrics_server.server_close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -62,12 +70,31 @@ def handle_ai_server_error(request: Request, exc: AIServerError):
     )
 
 
+def _field(error: dict) -> str:
+    """("body", "prev_slot", "category", 1) → "prev_slot.category.1".
+
+    모든 엔드포인트가 body(일부 path)로만 받으므로 첫 칸의 위치 표시는 뺀다.
+    body 자체가 없으면 남는 게 없어 "body" 로 둔다. JSON 해석 실패는 loc 에
+    필드가 아니라 글자 위치(숫자)가 와서 따로 "body" 로 둔다.
+    """
+    if error["type"] == "json_invalid":
+        return "body"
+    loc = tuple(error["loc"])
+    parts = loc[1:] if loc and loc[0] in ("body", "path", "query") else loc
+    return ".".join(str(p) for p in parts) or "body"
+
+
+# 422 는 요청이 계약에 안 맞는 경우라 원인을 응답에 싣는다(배포 회고) — 백엔드가
+# 무엇을 고쳐야 할지 알아야 한다. 서버 내부 오류와 달리 새어 나갈 내부 정보가
+# 없다. 다만 pydantic 원본은 싣지 않는다: input 에 요청 본문이 통째로 들어가고,
+# 형식이 라이브러리 버전에 묶인다. 필드 위치와 이유만 우리 형식으로 옮긴다.
 @app.exception_handler(RequestValidationError)
 def handle_validation_error(request: Request, exc: RequestValidationError):
     logger.warning("%s %s -> validation_error detail=%s", request.method, request.url.path, exc)
+    errors = [{"field": _field(e), "reason": e["msg"]} for e in exc.errors()]
     return JSONResponse(
         status_code=422,
-        content=APIResponse(message="validation_error").model_dump(),
+        content=APIResponse(message="validation_error", data={"errors": errors}).model_dump(),
     )
 
 

@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.exceptions import InternalServerError, LLMRateLimitedError, LLMTimeoutError
 
 # docs/6 5-2절: 영상 분석(멀티모달) 60초. 시도 1번당 상한이다.
-_VIDEO_TIMEOUT = 60.0
+_VIDEO_TIMEOUT = 120.0
 
 # 재시도는 SDK 한 층에서만 한다. 랭체인의 max_retries 는 이름과 달리 "총 시도
 # 횟수"라 2 = 재시도 1회다. SDK 가 408·429·5xx·일시적 네트워크 오류를 지수
@@ -17,7 +17,7 @@ _VIDEO_TIMEOUT = 60.0
 # 기본값(6)을 그대로 두면 모르는 사이 최대 6번 두드려서, 요금제상 영원히 안
 # 되는 요청에도 429 하나 받는 데 35초가 걸렸다(verify-place 실측).
 # 전체 시간은 각 서비스의 asyncio.wait_for 가 자른다.
-_ATTEMPTS = 2
+_ATTEMPTS = 1
 
 
 @lru_cache(maxsize=1)

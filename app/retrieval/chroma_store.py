@@ -49,6 +49,19 @@ def upsert_places(
     )
 
 
+def delete_places(place_ids: list[str]) -> int:
+    """있는 id 만 지우고, 실제로 지운 수를 돌려준다.
+
+    Chroma 의 delete 는 지운 개수를 돌려주지 않고 없는 id 도 에러 없이 넘어간다.
+    그래서 get 으로 실제 있는 id 를 먼저 확인하고 그것만 지운다. 조회와 삭제
+    사이에 다른 요청이 같은 id 를 지우면 개수가 1~2개 어긋날 수 있다(드묾).
+    """
+    found = _collection().get(ids=place_ids, include=[])["ids"]
+    if found:
+        _collection().delete(ids=found)
+    return len(found)
+
+
 def get_embeddings(place_ids: list[str]) -> list[list[float]]:
     """저장된 장소 벡터를 꺼낸다. 없는 id 는 조용히 빠진다(취향 벡터 계산용)."""
     if not place_ids:
@@ -58,12 +71,12 @@ def get_embeddings(place_ids: list[str]) -> list[list[float]]:
     return [list(v) for v in embeddings] if embeddings is not None else []
 
 
-def search_places(query_vector: list[float], place_ids: list[str], n_results: int) -> list[str]:
-    """place_ids 범위 안에서 query_vector 와 가까운 순으로 place_id 를 돌려준다.
+def search_places(query_vector: list[float], place_ids: list[str], n_results: int) -> list[tuple[str, float]]:
+    """place_ids 범위 안에서 query_vector 와 가까운 순으로 (place_id, 유사도) 를 돌려준다.
 
     범위를 백엔드가 준 후보로 한정하므로, 삭제된 장소의 벡터가 남아 있어도
     결과에 나오지 않는다(docs/1 2-7). 아직 임베딩되지 않은 후보는 결과에서
-    빠지니 호출부가 따로 챙긴다.
+    빠지니 호출부가 따로 챙긴다. 컬렉션이 코사인 거리라 유사도 = 1 - 거리.
     """
     if not place_ids:
         return []
@@ -71,6 +84,9 @@ def search_places(query_vector: list[float], place_ids: list[str], n_results: in
         query_embeddings=[query_vector],
         where={"place_id": {"$in": place_ids}},
         n_results=n_results,
+        include=["distances"],
     )
-    return result["ids"][0] if result["ids"] else []
+    if not result["ids"]:
+        return []
+    return [(pid, 1.0 - dist) for pid, dist in zip(result["ids"][0], result["distances"][0])]
 
