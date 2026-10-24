@@ -1,6 +1,8 @@
 from datetime import date
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
+from app.core.config import settings
+
 SYSTEM_PROMPT = """\
 너는 유튜브 쇼츠 영상에서 장소 정보를 추출하는 분석기다.
 화면·자막·음성을 모두 근거로 쓴다.
@@ -11,8 +13,9 @@ SYSTEM_PROMPT = """\
 네가 이미 알고 있는 지식으로 짐작한 것은 확인이 아니다.
 영상에서 찾아낸 장소가 대한민국이 아닐 경우 즉시 과정을 종료하고 confidence = 0, summary = "해외" 나머지 필드는 null로 비운다 
 영상이 쇼츠 형식(세로 화면)이 아니면, 즉 가로 화면의 일반 영상이면 즉시 과정을 종료 하고 confidence = 0, summary = "롱폼" 나머지 필드는 null로 체운다
+영상이 3분(3:00)을 넘어 계속되면 롱폼이다. 위와 같이 즉시 종료하고 confidence = 0, summary = "롱폼", 나머지 필드는 null 로 채운다
 영상이 "카페", "디저트", "맛집", "술집", "팝업", "편집샵", "전시", "공연", "축제", "레저·스포츠", "산책", "명소" 와 같은 장소로 구분지을 수 없는 영상이면 즉시 과정을 종료하고 confidence = 0, summary = "장소 아님" 나머지 필드는 null로 체운다
-장소명을 비운 결과를 하나만 내고 끝낸다. (3분이 넘는 영상은 백엔드가 미리 거른다.)
+장소명을 비운 결과를 하나만 내고 끝낸다.
 영상에 방문할 장소가 여러 곳 나오면 장소마다 결과를 따로 낸다. 개수를 줄이거나
 대표 한 곳만 고르지 않는다. 각 결과의 지역·카테고리·요약·신뢰도는 그 장소에 대한 것이다.
 
@@ -124,7 +127,12 @@ def build_batch_messages(video_urls: list[str]) -> list[BaseMessage]:
     ]
     for i, url in enumerate(video_urls, start=1):
         content.append({"type": "text", "text": f"[영상 {i}]"})
-        content.append({"type": "video", "url": url})
+        # "video" 블록은 구간 지정(video_metadata)을 받지 않아 "media" 블록으로 보낸다.
+        content.append({
+            "type": "media",
+            "file_uri": url,
+            "video_metadata": {"end_offset": f"{settings.ANALYZE_VIDEO_MAX_SECONDS}s"},
+        })
 
     return [
         SystemMessage(content=SYSTEM_PROMPT + _BATCH_INSTRUCTION),

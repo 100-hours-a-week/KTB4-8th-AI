@@ -25,6 +25,7 @@ import math
 import time
 from collections.abc import Awaitable
 
+from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -233,7 +234,7 @@ def _categories(req: RecommendCoursesRequest) -> str:
     return ", ".join(req.category) if req.category else ""
 
 
-async def _structured(stage: str, prompt: str, schema: type[BaseModel], budget: float) -> BaseModel:
+async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseModel], budget: float) -> BaseModel:
     # factory 의 공용 인스턴스는 그대로 두고 이 엔드포인트에서만 thinking 을 줄인다.
     llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
     chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
