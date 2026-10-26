@@ -16,6 +16,8 @@ from app.schemas.analyze_video import (
     VideoAnalysis,
     VideoAnalysisResult,
 )
+from app.schemas.business_hours import BusinessHours, TimeRange, WeeklyHours
+from app.schemas.category import ALWAYS_OPEN_CATEGORIES, EVENT_CATEGORIES
 from app.schemas.verify_place import VerifyPlaceRequest
 from app.services.verify_place import verify_place
 
@@ -38,6 +40,14 @@ _VERIFY_SLOTS = asyncio.Semaphore(settings.VERIFY_PLACE_PARALLEL)
 
 def _failed(url: str, code: str) -> VideoAnalysisResult:
     return VideoAnalysisResult(video_url=url, status="failed", error=code)
+
+
+def _always_open() -> BusinessHours:
+    # 24시간 영업은 00:00~23:59 다(verify_place_structure.yaml 과 같은 약속).
+    # 검색으로 확인한 값이 아니라서 estimated 를 켠다.
+    day = [TimeRange(open_time="00:00", close_time="23:59")]
+    week = WeeklyHours(**{key: day for key in WeeklyHours.model_fields})
+    return BusinessHours(weekly_hours=week, estimated=True)
 
 
 def _not_found(url: str) -> VideoAnalysisResult:
@@ -146,7 +156,11 @@ async def _verify(url: str, analysis: VideoAnalysis) -> VideoAnalysisResult:
     # 가게일 가능성" 순이라 영업시간 때문에 다른 가게를 고르면 안 되기 때문이다.
     # 임시 결정이다 — 실측에서 success 의 7~24%(공원·사찰, 검색에 영업시간이 없는
     # 맛집)가 이 규칙으로 빠진다. 영업시간 추정(주변 최빈값)을 붙인 뒤 다시 본다.
-    if place.business_hours is None:
+    # 산책·명소는 예외로 24시간 영업으로 본다(10/26 결정).
+    business_hours = place.business_hours
+    if business_hours is None and analysis.category in ALWAYS_OPEN_CATEGORIES:
+        business_hours = _always_open()
+    if business_hours is None:
         return _not_found(url)
     return VideoAnalysisResult(
         video_url=url,
@@ -156,10 +170,11 @@ async def _verify(url: str, analysis: VideoAnalysis) -> VideoAnalysisResult:
         # 검색 결과가 건물명·층을 더 정확히 알고, 없을 때만 영상에서 본 위치를 쓴다.
         location_detail=place.location_detail or analysis.location_detail,
         category=analysis.category,
-        business_hours=place.business_hours,
+        business_hours=business_hours,
         event_start_date=place.event_start_date,
         event_end_date=place.event_end_date,
         event_period_unresolved=place.event_period_unresolved,
+        place_type="이벤트" if analysis.category in EVENT_CATEGORIES else "장소",
         lat=place.lat,
         lng=place.lng,
         confidence=analysis.confidence,

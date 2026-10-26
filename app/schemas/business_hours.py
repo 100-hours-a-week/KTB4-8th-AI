@@ -72,4 +72,4 @@ class BusinessHours(BaseModel):
         default_factory = dict,
         description = "임시 휴무·단축 영업. 영업측 공지 기준, 지난 날짜는 넣지 않는다. [] 는 그날 휴무"
     )
-    estimated : bool = Field(default = False, description = "주변 가게 영업시간으로 추정한 값인지")
+    estimated : bool = Field(default = False, description = "검색으로 확인하지 않고 추정한 값인지 (산책·명소의 24시간 기본값 등)")

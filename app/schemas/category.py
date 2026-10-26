@@ -2,6 +2,15 @@ from typing import Literal
 
 PlaceCategory = Literal["카페", "디저트", "맛집", "술집", "팝업", "편집샵", "전시", "공연", "축제", "레저·스포츠", "산책", "명소", "기타"]
 
+PlaceType = Literal["장소", "이벤트"]
+
+# analyze-video 응답의 place_type 이 "이벤트"가 되는 카테고리. 나머지는 "장소"다.
+EVENT_CATEGORIES: frozenset[str] = frozenset({"팝업", "편집샵", "전시", "공연", "축제"})
+
+# 검색에서 영업시간이 안 나오면 24시간 영업으로 보는 카테고리. 공원·산책로·
+# 랜드마크는 대개 문을 닫지 않아 영업시간이 검색에 없다.
+ALWAYS_OPEN_CATEGORIES: frozenset[str] = frozenset({"산책", "명소"})
+
 # 코스 추천 압축 기준 벡터의 카테고리 몫(recommend_courses.py). 비교 대상이 장소
 # 요약이라 분류 규칙(analyze_video 프롬프트 정의)이 아니라 요약 문체로 쓴다 —
 # 그래서 프롬프트 정의와 따로 둔다. 내용을 바꾸면 프롬프트 정의도 같이 본다.
