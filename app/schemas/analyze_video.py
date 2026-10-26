@@ -3,7 +3,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 from app.schemas.business_hours import BusinessHours
-from app.schemas.category import PlaceCategory
+from app.schemas.category import PlaceCategory, PlaceType
 from app.schemas.common import APIResponse, ResponseMessage
 
 #요청 스키마
@@ -31,6 +31,7 @@ class VideoAnalysisResult(BaseModel):
     event_start_date : Optional[date] = Field(default = None, description = "행사 시작일")
     event_end_date : Optional[date] = Field(default = None, description = "행사 종료일")
     event_period_unresolved : Optional[bool] = Field(default = None, description = "기간 한정 행사인데 종료일을 못 찾았는지")
+    place_type : Optional[PlaceType] = Field(default = None, description = "카테고리가 팝업·편집샵·전시·공연·축제면 이벤트, 나머지는 장소. not_found·failed 는 null")
     lat : Optional[float] = Field(default = None, description = "위도")
     lng : Optional[float] = Field(default = None, description = "경도")
     confidence : Optional[float] = Field(default = None, ge = 0.0, le = 1.0, description = "분석 신뢰도")

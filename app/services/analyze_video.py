@@ -16,6 +16,7 @@ from app.schemas.analyze_video import (
     VideoAnalysis,
     VideoAnalysisResult,
 )
+from app.schemas.category import EVENT_CATEGORIES
 from app.schemas.verify_place import VerifyPlaceRequest
 from app.services.verify_place import verify_place
 
@@ -160,6 +161,7 @@ async def _verify(url: str, analysis: VideoAnalysis) -> VideoAnalysisResult:
         event_start_date=place.event_start_date,
         event_end_date=place.event_end_date,
         event_period_unresolved=place.event_period_unresolved,
+        place_type="이벤트" if analysis.category in EVENT_CATEGORIES else "장소",
         lat=place.lat,
         lng=place.lng,
         confidence=analysis.confidence,
