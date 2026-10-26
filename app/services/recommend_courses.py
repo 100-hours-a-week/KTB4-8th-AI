@@ -25,6 +25,7 @@ import math
 import time
 from collections.abc import Awaitable
 
+from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -47,7 +48,6 @@ from app.schemas.recommend_courses import (
     RerankLLM,
 )
 from app.services import course_builder as cb
-from app.services import recommend_web
 
 _ENDPOINT = "recommend-courses"
 
@@ -234,7 +234,7 @@ def _categories(req: RecommendCoursesRequest) -> str:
     return ", ".join(req.category) if req.category else ""
 
 
-async def _structured(stage: str, prompt: str, schema: type[BaseModel], budget: float) -> BaseModel:
+async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseModel], budget: float) -> BaseModel:
     # factory 의 공용 인스턴스는 그대로 두고 이 엔드포인트에서만 thinking 을 줄인다.
     llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
     chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
@@ -387,10 +387,6 @@ async def _travel_times(
 # ── 조립 ───────────────────────────────────────────────────────────────
 
 
-def _coord_text(c: RecommendCandidate) -> str:
-    return f"({c.lat:.5f}, {c.lng:.5f})" if cb.coord(c) is not None else "(좌표 없음)"
-
-
 def _available_minutes(req: RecommendCoursesRequest) -> int | None:
     return int(req.available_time) if req.available_time else None
 
@@ -439,8 +435,6 @@ async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
 
 
 async def recommend_courses(req: RecommendCoursesRequest) -> RecommendCoursesData:
-    if not req.candidates:
-        return await _recommend_from_web(req)
     try:
         return await asyncio.wait_for(_recommend(req), timeout=settings.TIMEOUT_RECOMMEND_COURSES)
     except asyncio.TimeoutError as exc:
@@ -449,22 +443,6 @@ async def recommend_courses(req: RecommendCoursesRequest) -> RecommendCoursesDat
         raise
     except Exception as exc:
         raise to_domain_error(exc) from exc
-
-
-async def _recommend_from_web(req: RecommendCoursesRequest) -> RecommendCoursesData:
-    """후보가 없으면 웹검색으로 바로 코스를 짠다(임시, recommend_web.py).
-
-    실패하거나 시간을 넘기면 후보가 없을 때의 기존 응답처럼 빈 코스를 돌려준다.
-    """
-    started = time.perf_counter()
-    try:
-        data = await asyncio.wait_for(recommend_web.recommend(req), timeout=settings.TIMEOUT_RECOMMEND_WEB)
-    except Exception as exc:
-        logger.warning("%s 웹검색 추천 실패 %.1fs, 빈 코스로 응답: %r",
-                       _ENDPOINT, time.perf_counter() - started, exc)
-        return RecommendCoursesData(courses=[])
-    logger.info("%s 웹검색 추천 %.1fs, 코스 %d개", _ENDPOINT, time.perf_counter() - started, len(data.courses))
-    return data
 
 
 # ── 중단 ───────────────────────────────────────────────────────────────
