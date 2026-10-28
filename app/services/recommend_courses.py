@@ -338,7 +338,7 @@ async def _compose(
             if p.place_id in by_id and p.place_id not in seen:
                 seen.add(p.place_id)
                 stay = p.stay_minutes if p.stay_minutes > 0 else cb.default_stay(req.category)
-                picks.append(cb.Pick(by_id[p.place_id], stay, p.reason))
+                picks.append(cb.Pick(by_id[p.place_id], stay))
         if picks:
             drafts.append((course.title, picks[: cb.MAX_PLACES_PER_COURSE]))
 
@@ -352,7 +352,7 @@ def _rule_based(req: RecommendCoursesRequest, ranked: list[RecommendCandidate]) 
     return [
         (
             cb.template_title(group[0].place_name, req.query, _categories(req)),
-            [cb.Pick(c, stay, "요청 조건과 유사도가 높은 장소") for c in group],
+            [cb.Pick(c, stay) for c in group],
         )
         for group in groups
     ]

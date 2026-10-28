@@ -21,9 +21,10 @@ class Settings(BaseSettings):
     # 재순위 4~5초·조합 5초라, 고정 4/5초로 자르면 거의 항상 폴백이 됐다.
     # 15초에서 25초로 늘렸다 — 10/23 운영에서 재순위 4.6초 뒤 조합이 8.4초에
     # 끊겨 규칙 조합으로 떨어졌다. 백엔드가 이 요청을 기다리는 시간보다 짧아야 한다.
-    # 25초에서 40초로 늘렸다 — 10/28 운영에서 Gemini 재순위가 5초 몫에 끊겼다(CancelledError).
+    # 25초에서 55초로 늘렸다 — 10/28 운영에서 Gemini 재순위가 5초 몫에 끊겼다(CancelledError).
     # GPU 몫과 Gemini 몫(RECOMMEND_GEMINI_RESERVE)을 둘 다 담으려고 재순위 상한도 15초로 올렸다.
-    TIMEOUT_RECOMMEND_COURSES: float = 40.0
+    # 조합은 GPU 웜 실측 13.7~22.8초(출력 244~413토큰, 약 18 tok/s)라 GPU 몫이 25초를 넘게 잡았다.
+    TIMEOUT_RECOMMEND_COURSES: float = 55.0
     RECOMMEND_BUDGET_RETRIEVAL: float = 1.5  # 쿼리 임베딩 + Chroma 검색, 상한
     RECOMMEND_BUDGET_RERANK: float = 15.0  # 상한. 조합 몫을 남기도록 더 줄어들 수 있다
     RECOMMEND_BUDGET_MAP: float = 3.0  # 상한. 남은 시간이 적으면 줄어든다
@@ -68,7 +69,7 @@ class Settings(BaseSettings):
     TIMEOUT_EXTRACT_GPU: float = 15.0
     # recommend-courses 각 단계(재순위·조합)에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
     # Gemini 기준선 p95(재순위 8.3초·조합 10.3초, 10/20)에 맞춰 5초에서 10초로 올렸다.
-    # 재순위는 GPU 5초 + Gemini 10초, 조합은 약 GPU 11.5초 + Gemini 10초가 된다.
+    # 재순위는 GPU 5초 + Gemini 10초, 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
     RECOMMEND_GEMINI_RESERVE: float = 10.0
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"

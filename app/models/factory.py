@@ -45,6 +45,8 @@ def get_gpu_llm() -> ChatOpenAI | None:
 
     재시도는 하지 않는다 — 실패하면 호출하는 쪽이 Gemini 로 넘어간다.
     temperature 0 은 10/27 실측과 같은 값이다.
+    max_tokens 는 시간 초과로 끊긴 요청이 GPU 에서 계속 생성하며 자리를 차지하는 걸 막는다
+    (10/28 운영: 끊긴 요청 2개가 70초 넘게 돌았다). 가장 긴 조합 출력 413토큰의 약 2.5배다.
     """
     if not settings.GPU_ENABLED:
         return None
@@ -55,6 +57,7 @@ def get_gpu_llm() -> ChatOpenAI | None:
         base_url=f"{root}/v1",
         api_key=settings.GPU_API_KEY,
         temperature=0,
+        max_tokens=1024,
         max_retries=0,
     )
 
