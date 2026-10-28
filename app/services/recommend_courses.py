@@ -32,7 +32,7 @@ from app.core.config import settings
 from app.core.exceptions import AIServerError, LLMInvalidResponseError, LLMTimeoutError
 from app.core.logging import log_llm, logger
 from app.integrations.map_client import driving_minutes
-from app.models.factory import get_llm, to_domain_error
+from app.models.factory import get_gpu_llm, get_llm, invoke_gpu_first, to_domain_error
 from app.prompts.loader import load_prompt
 from app.retrieval.chroma_store import get_embeddings, search_places
 from app.retrieval.embedder import get_embedder
@@ -238,9 +238,14 @@ async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseMo
     # factory 의 공용 인스턴스는 그대로 두고 이 엔드포인트에서만 thinking 을 줄인다.
     llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
     chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
+    gpu = get_gpu_llm()
+    gpu_chain = gpu.with_structured_output(schema, method="json_schema", include_raw=True) if gpu else None
     started = time.perf_counter()
     try:
-        result = await asyncio.wait_for(chain.ainvoke(prompt), timeout=budget)
+        result, model = await invoke_gpu_first(
+            f"{_ENDPOINT}:{stage}", prompt, gpu_chain, chain,
+            total=budget, gpu_timeout=budget - settings.RECOMMEND_GEMINI_RESERVE,
+        )
     except Exception as exc:
         log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL,
                 time.perf_counter() - started, success=False, detail=repr(exc))
@@ -249,10 +254,10 @@ async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseMo
 
     if result["parsing_error"] is not None:
         detail = str(result["parsing_error"])
-        log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL, latency, success=False, detail=detail)
+        log_llm(f"{_ENDPOINT}:{stage}", model, latency, success=False, detail=detail)
         raise LLMInvalidResponseError(detail)
 
-    log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL, latency, success=True)
+    log_llm(f"{_ENDPOINT}:{stage}", model, latency, success=True)
     return result["parsed"]
 
 

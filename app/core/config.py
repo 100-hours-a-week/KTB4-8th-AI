@@ -54,6 +54,20 @@ class Settings(BaseSettings):
     # 속도 우선으로 잡은 값이다 — 429 가 보이면 이 값을 낮춘다.
     VERIFY_PLACE_PARALLEL: int = 10
 
+    # extract·recommend-courses 를 Modal GPU(vLLM, Gemma 31B)로 먼저 보낸다. 실패하거나
+    # 시간을 넘기면 남은 시간으로 Gemini 를 부른다. 꺼져 있으면 지금처럼 Gemini 만 쓴다.
+    # URL·키는 .env 에 넣는다(다른 키와 같다).
+    GPU_ENABLED: bool = False
+    GPU_BASE_URL: str | None = None  # Modal 엔드포인트 루트(/v1 없이)
+    GPU_API_KEY: str | None = None  # Modal Secret keepgo-vllm-key 와 같은 값
+    GPU_MODEL: str = "gemma-31b"  # vllm --served-model-name
+    # extract 의 GPU 호출 상한. 웜 실측 4~11초(10/28, 구조화 출력). 콜드면 여기서 끊기고
+    # 남은 15초로 Gemini 를 부른다 — 콜드 스타트(12~106초)는 이 안에 못 들어온다.
+    TIMEOUT_EXTRACT_GPU: float = 15.0
+    # recommend-courses 각 단계(재순위·조합)에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
+    # 임의 초기값이다 — Gemini 재순위 실측 약 4초에 여유를 붙였다. GPU 실측 후 조정한다.
+    RECOMMEND_GEMINI_RESERVE: float = 5.0
+
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
 
