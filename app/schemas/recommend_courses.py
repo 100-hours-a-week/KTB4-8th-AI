@@ -89,7 +89,6 @@ class RerankLLM(BaseModel):
 class DraftPlace(BaseModel):
     place_id: str = Field(description="장소 식별자 (후보 목록에 있는 값만)")
     stay_minutes: int = Field(description="예상 체류 시간(분)")
-    reason: str = Field(description="이 장소가 선정된 근거 (한 문장)")
 
 
 class DraftCourse(BaseModel):
@@ -98,4 +97,4 @@ class DraftCourse(BaseModel):
 
 
 class ComposeLLM(BaseModel):
-    courses: list[DraftCourse] = Field(description="서로 다른 장소 조합의 코스 (최대 3개)")
+    courses: list[DraftCourse] = Field(description="서로 다른 장소 조합의 코스 (3개를 채운다)")
