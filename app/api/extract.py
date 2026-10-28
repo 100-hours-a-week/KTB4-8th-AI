@@ -11,10 +11,11 @@ from app.core.config import settings
 from app.core.exceptions import LLMInvalidResponseError, LLMRateLimitedError, LLMTimeoutError, MapAPIError
 from app.core.logging import logger
 from app.integrations.map_client import geocode, reverse_geocode
-from app.models.factory import get_llm
+from app.models.factory import get_gpu_llm, get_llm, invoke_gpu_first
 from app.prompts.loader import load_prompt
 from app.schemas.common import Coordinate
 from app.schemas.extract import ExtractData, ExtractDataLLM, ExtractRequest, ExtractResponse, Slots
+from app.services.slot_datetime import resolve_visit, with_weekday
 from app.services.slot_merge import merge_slots
 
 
@@ -54,19 +55,30 @@ async def extract(request: ExtractRequest, http_request: Request = None) -> Extr
     prev_origin_text = await _origin_text(request.prev_slot.origin)
     prev_for_prompt = request.prev_slot.model_dump(mode="json")
     prev_for_prompt["origin"] = prev_origin_text
+    # 날짜에 요일을 붙여 보여 준다. bot_message 에 "토요일" 같은 말을 쓰려면 요일이 필요한데,
+    # 모델이 요일을 계산하면 틀린다(10/28 Gemma 실측).
+    if request.prev_slot.datetime is not None:
+        prev_for_prompt["datetime"] = with_weekday(request.prev_slot.datetime)
 
     prompt = load_prompt(
         "extract",
         chat=request.chat,
-        date=str(request.date),
+        date=with_weekday(request.date),
         prev_slot=json.dumps(prev_for_prompt, ensure_ascii=False),
         prev_query=request.prev_query or "없음",
     )
 
-    llm = get_llm().with_structured_output(ExtractDataLLM)
-
+    gpu = get_gpu_llm()
     try:
-        out = await asyncio.wait_for(llm.ainvoke(prompt), timeout=settings.TIMEOUT_EXTRACT)
+        out, model = await invoke_gpu_first(
+            "extract",
+            prompt,
+            gpu.with_structured_output(ExtractDataLLM, method="json_schema") if gpu else None,
+            get_llm().with_structured_output(ExtractDataLLM),
+            total=settings.TIMEOUT_EXTRACT,
+            gpu_timeout=settings.TIMEOUT_EXTRACT_GPU,
+        )
+        logger.info("extract model=%s", model)
     except asyncio.TimeoutError:
         raise LLMTimeoutError(detail="슬롯 추출 모델 호출이 제한 시간 내에 끝나지 않았습니다.")
     except APIError as e:
@@ -82,12 +94,24 @@ async def extract(request: ExtractRequest, http_request: Request = None) -> Extr
     new_origin = None
     if said and said != prev_origin_text:
         new_origin = await _origin_coordinate(said)
-    new_slot = Slots(**out.slot.model_dump(exclude={"origin"}), origin=new_origin)
+    visit, passed = resolve_visit(out.slot, request.date, request.prev_slot.datetime, request.prev_query)
+    new_slot = Slots(
+        **out.slot.model_dump(include={"region", "available_time", "category"}),
+        origin=new_origin,
+        datetime=visit,
+    )
 
     slot = merge_slots(request.prev_slot, new_slot)
     if said and said != prev_origin_text and new_origin is None:
         # 사용자가 출발지를 바꿨는데 좌표를 못 찾았다. 이전 좌표를 남기면 엉뚱한 출발지가 되므로 비운다.
         slot.origin = None
 
-    data = ExtractData(slot=slot, query=out.query, bot_message=out.bot_message)
+    bot_message = out.bot_message
+    if passed:
+        # 이미 지난 "이번 주 X"(10/28 결정). 이전 날짜를 남기면 사용자가 바꾼 뜻이 사라지므로
+        # 비우고, 모델 문장은 그 날짜로 진행하는 말일 수 있어 코드가 다시 묻는다.
+        slot.datetime = None
+        bot_message = f"이번 주 {out.slot.weekday}요일은 이미 지났어요. 언제 가실 예정이에요?"
+
+    data = ExtractData(slot=slot, query=out.query, bot_message=bot_message)
     return ExtractResponse(message="extract_success", data=data)
