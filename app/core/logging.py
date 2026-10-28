@@ -1,7 +1,11 @@
 import logging
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai-server")
+
+# report_handled_error_throttled 가 (where, code)별로 마지막 보고 시각과 그 뒤 생략한 건수를 기억한다.
+_last_reported: dict[tuple[str, str], tuple[float, int]] = {}
 
 
 def report_handled_error(where: str, code: str, exc: BaseException | None = None) -> None:
@@ -16,6 +20,27 @@ def report_handled_error(where: str, code: str, exc: BaseException | None = None
     """
     detail = (getattr(exc, "detail", None) or exc) if exc is not None else None
     logger.error("%s -> %s detail=%s", where, code, detail, exc_info=exc)
+
+
+def report_handled_error_throttled(
+    where: str, code: str, exc: BaseException | None = None, window: float = 300.0
+) -> None:
+    """report_handled_error 와 같지만, 같은 (where, code)는 window 초에 한 번만 Sentry 로 보낸다.
+
+    GPU 처럼 실패해도 대체 경로로 응답이 나가는 곳은, 고장 나면 요청마다 같은 실패가 난다.
+    그때마다 이벤트를 보내면 Sentry 한도만 쓰므로, 사이의 실패는 warning 으로만 남기고
+    다음 보고에 생략한 건수를 붙인다.
+    """
+    now = time.monotonic()
+    last, skipped = _last_reported.get((where, code), (None, 0))
+    if last is not None and now - last < window:
+        _last_reported[(where, code)] = (last, skipped + 1)
+        logger.warning("%s -> %s (Sentry 보고 생략) detail=%r", where, code, exc)
+        return
+    _last_reported[(where, code)] = (now, 0)
+    if skipped:
+        code = f"{code} (직전 보고 뒤 {skipped}건 더 있었음)"
+    report_handled_error(where, code, exc)
 
 
 def log_llm(
