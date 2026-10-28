@@ -12,7 +12,7 @@ from langsmith import trace
 
 from app.core.config import settings
 from app.core.exceptions import InternalServerError, LLMRateLimitedError, LLMTimeoutError
-from app.core.logging import logger
+from app.core.logging import logger, report_handled_error_throttled
 
 # docs/6 5-2절: 영상 분석(멀티모달) 60초. 시도 1번당 상한이다.
 _VIDEO_TIMEOUT = 120.0
@@ -76,22 +76,40 @@ async def invoke_gpu_first(
     답한 모델과 대체 이유가 남는다. 시간 초과로 끊긴 GPU 호출은 CancelledError 로만
     찍혀서, 부모 기록 없이는 콜드 대체인지 장애인지 열어 봐야 알 수 있었다.
     대체 이유가 없는데 model 이 Gemini 면 GPU 를 부르지 않은 것이다(꺼짐·예산 부족).
+
+    호출마다 gpu_route 로그 한 줄을 남긴다(지연 분포·대체율 집계용). GPU 가 시간 초과가
+    아닌 이유로 실패하면 고장 신호라 Sentry 로 보낸다 — 10/28 운영에서 주소 오류로 GPU 가
+    전부 500 이었는데 Gemini 대체가 덮어 응답이 정상으로 보였다. 시간 초과는 콜드 스타트
+    때 정상이라 보내지 않는다.
     """
     started = time.monotonic()
-    with trace(label, run_type="chain", inputs={"total": total, "gpu_timeout": gpu_timeout}) as run:
-        reason = None
-        if gpu is not None and gpu_timeout > 0:
-            try:
-                out = await asyncio.wait_for(gpu.ainvoke(prompt), timeout=min(gpu_timeout, total))
-                run.end(outputs={"model": settings.GPU_MODEL, "fallback_reason": None})
-                return out, settings.GPU_MODEL
-            except Exception as exc:
-                reason = "timeout" if isinstance(exc, TimeoutError) else f"error: {exc!r}"
-                logger.warning("%s GPU 실패 %.1fs, Gemini 로 대체: %r", label, time.monotonic() - started, exc)
-        left = total - (time.monotonic() - started)
-        out = await asyncio.wait_for(gemini.ainvoke(prompt), timeout=left)
-        run.end(outputs={"model": settings.GOOGLE_MODEL, "fallback_reason": reason})
-        return out, settings.GOOGLE_MODEL
+    gpu_outcome, gpu_latency, answered = "skipped", 0.0, "none"
+    try:
+        with trace(label, run_type="chain", inputs={"total": total, "gpu_timeout": gpu_timeout}) as run:
+            reason = None
+            if gpu is not None and gpu_timeout > 0:
+                try:
+                    out = await asyncio.wait_for(gpu.ainvoke(prompt), timeout=min(gpu_timeout, total))
+                    gpu_outcome, gpu_latency, answered = "success", time.monotonic() - started, "gpu"
+                    run.end(outputs={"model": settings.GPU_MODEL, "fallback_reason": None})
+                    return out, settings.GPU_MODEL
+                except Exception as exc:
+                    gpu_latency = time.monotonic() - started
+                    if isinstance(exc, TimeoutError):
+                        gpu_outcome = reason = "timeout"
+                    else:
+                        gpu_outcome, reason = "error", f"error: {exc!r}"
+                        report_handled_error_throttled(label, "gpu_error", exc)
+            left = total - (time.monotonic() - started)
+            out = await asyncio.wait_for(gemini.ainvoke(prompt), timeout=left)
+            answered = "gemini"
+            run.end(outputs={"model": settings.GOOGLE_MODEL, "fallback_reason": reason})
+            return out, settings.GOOGLE_MODEL
+    finally:
+        # answered=none 이면 Gemini 까지 실패한 것이다(예외는 호출하는 쪽이 처리한다).
+        log = logger.info if answered == "gpu" else logger.warning
+        log("gpu_route label=%s answered=%s gpu_outcome=%s gpu_latency=%.2fs total_latency=%.2fs",
+            label, answered, gpu_outcome, gpu_latency, time.monotonic() - started)
 
 
 def to_domain_error(exc: BaseException) -> Exception:
