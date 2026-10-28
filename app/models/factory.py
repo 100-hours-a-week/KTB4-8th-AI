@@ -48,9 +48,11 @@ def get_gpu_llm() -> ChatOpenAI | None:
     """
     if not settings.GPU_ENABLED:
         return None
+    # 끝의 "/" 나 "/v1" 이 남으면 //v1, /v1/v1 로 나가 Modal 이 500·404 를 낸다(10/28 운영).
+    root = settings.GPU_BASE_URL.strip().rstrip("/").removesuffix("/v1")
     return ChatOpenAI(
         model=settings.GPU_MODEL,
-        base_url=f"{settings.GPU_BASE_URL}/v1",
+        base_url=f"{root}/v1",
         api_key=settings.GPU_API_KEY,
         temperature=0,
         max_retries=0,
