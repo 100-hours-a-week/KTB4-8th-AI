@@ -69,8 +69,11 @@ class Settings(BaseSettings):
     TIMEOUT_EXTRACT_GPU: float = 15.0
     # recommend-courses 각 단계(재순위·조합)에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
     # Gemini 기준선 p95(재순위 8.3초·조합 10.3초, 10/20)에 맞춰 5초에서 10초로 올렸다.
-    # 재순위는 GPU 5초 + Gemini 10초, 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
+    # 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
     RECOMMEND_GEMINI_RESERVE: float = 10.0
+    # 재순위만 따로 둔다 — GPU 5초 몫이 웜 실측 4.2~4.8초에 빠듯해서(11/2), 단계 15초는 그대로
+    # 두고 GPU 7초 + Gemini 8초로 나눴다. Gemini 대체 때 p95(8.3초)를 넘으면 유사도 순서로 대체된다.
+    RECOMMEND_GEMINI_RESERVE_RERANK: float = 8.0
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
