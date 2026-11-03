@@ -57,8 +57,9 @@ class Settings(BaseSettings):
     # 속도 우선으로 잡은 값이다 — 429 가 보이면 이 값을 낮춘다.
     VERIFY_PLACE_PARALLEL: int = 10
 
-    # extract·recommend-courses 를 Modal GPU(vLLM, Gemma 31B)로 먼저 보낸다. 실패하거나
-    # 시간을 넘기면 남은 시간으로 Gemini 를 부른다. 꺼져 있으면 지금처럼 Gemini 만 쓴다.
+    # extract·recommend-courses 는 Modal GPU(vLLM, Gemma 31B)로 먼저 보내고, 실패하거나
+    # 시간을 넘기면 남은 시간으로 Gemini 를 부른다. analyze-video 의 장소 추출은 GPU 만 쓴다
+    # (실패하면 재시도 후 영상 failed). 꺼져 있으면 extract·추천은 Gemini 만, 영상 분석은 failed.
     # URL·키는 .env 에 넣는다(다른 키와 같다).
     GPU_ENABLED: bool = False
     GPU_BASE_URL: str | None = None  # Modal 엔드포인트 루트(/v1 없이)

@@ -1,6 +1,7 @@
 # 운영용 GPU 서빙: Modal L40S 에 vLLM 으로 Gemma 31B(FP8)를 띄운다.
 # AI 서버의 GPU_BASE_URL 이 이 앱의 주소다(app/core/config.py). extract·recommend-courses 가
 # 먼저 여기로 오고, 실패하거나 시간을 넘기면 Gemini 로 넘어간다(app/models/factory.py).
+# analyze-video 의 장소 추출도 여기로 오고, 이쪽은 Gemini 대체가 없다(app/services/analyze_video.py).
 #
 # 구성(10/28 결정): compiled + GPU 메모리 스냅샷 + vLLM Sleep Mode. 10/27 측정에서 콜드 스타트
 # 12.6~42.9초(중앙값 19.5), 웜 p50 4.87초. GPU 스냅샷은 Modal 알파 기능이라, 문제가 생기면

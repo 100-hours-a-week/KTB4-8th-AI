@@ -41,11 +41,11 @@ from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
 from app.schemas.business_hours import BusinessHours
 from app.schemas.verify_place import (
-    BusinessHoursLLM,
+    BusinessHoursParsed,
     GroundedPlace,
     PlaceCandidate,
     VerifyPlaceData,
-    VerifyPlaceLLM,
+    VerifyPlaceParsed,
     VerifyPlaceRequest,
 )
 from app.services.verify_place_parser import ParseError, parse
@@ -95,12 +95,12 @@ async def _search(req: VerifyPlaceRequest) -> str:
 
 
 @traceable(name="verify-place:parse", run_type="parser")
-def _parse(search_result: str) -> VerifyPlaceLLM:
+def _parse(search_result: str) -> VerifyPlaceParsed:
     parsed, _stats = parse(search_result)  # 통계(버린 후보 수)는 측정용이라 여기선 쓰지 않는다
     return parsed
 
 
-async def _search_and_parse(req: VerifyPlaceRequest) -> VerifyPlaceLLM:
+async def _search_and_parse(req: VerifyPlaceRequest) -> VerifyPlaceParsed:
     last: ParseError | None = None
     for attempt in range(1, _SEARCH_ATTEMPTS + 1):
         search_result = await _search(req)
@@ -130,7 +130,7 @@ def _apply_request_dates(req: VerifyPlaceRequest, place: GroundedPlace) -> Groun
     return place.model_copy(update=update) if update else place
 
 
-def _to_business_hours(hours: BusinessHoursLLM | None) -> BusinessHours | None:
+def _to_business_hours(hours: BusinessHoursParsed | None) -> BusinessHours | None:
     """모델이 적은 영업시간을 응답 형식으로 바꾼다.
 
     모델은 옮겨 적기만 하고, 정리는 여기서 한다 — 예외일 목록을 날짜 dict 로

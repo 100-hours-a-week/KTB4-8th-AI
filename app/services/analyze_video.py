@@ -1,11 +1,10 @@
 import asyncio
 import time
-from urllib.parse import urlparse
 
 from langsmith import traceable
 
 from app.core.config import settings
-from app.core.exceptions import AIServerError, InvalidRequestError
+from app.core.exceptions import AIServerError
 from app.core.logging import log_llm, report_handled_error
 from app.integrations.jev_client import classify_category
 from app.models.factory import get_gpu_llm, get_llm, to_domain_error, wake_gpu
@@ -26,7 +25,6 @@ from app.services.verify_place import verify_place
 
 _BATCH_ENDPOINT = "analyze-videos"
 _GPU_ENDPOINT = "analyze-videos:extract"
-_YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
 
 # ── 배치: /v1/analyze-video ──────────────────────────────────────────
 

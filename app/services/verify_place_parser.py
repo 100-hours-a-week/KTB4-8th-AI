@@ -1,4 +1,4 @@
-"""장소 검증 검색 결과(고정 형식 텍스트) → VerifyPlaceLLM. 모델 호출 없음.
+"""장소 검증 검색 결과(고정 형식 텍스트) → VerifyPlaceParsed. 모델 호출 없음.
 
 형식은 verify_place_search.yaml 의 "출력 형식"이다. 예전엔 Gemini 구조화 호출이 하던 일이다(11/3 교체).
 꾸밈(헤딩 #, 목록 기호, **굵게**)은 줄마다 먼저 지우고 읽는다 — 형식을 지정하기 전 검색 결과는
@@ -8,7 +8,7 @@ import re
 from datetime import date
 
 from app.schemas.business_hours import TimeRange, WeeklyHours
-from app.schemas.verify_place import BusinessHoursLLM, ExceptionDayLLM, GroundedPlace, VerifyPlaceLLM
+from app.schemas.verify_place import BusinessHoursParsed, ExceptionDayParsed, GroundedPlace, VerifyPlaceParsed
 
 DAYS = {"월": "MONDAY", "화": "TUESDAY", "수": "WEDNESDAY", "목": "THURSDAY",
         "금": "FRIDAY", "토": "SATURDAY", "일": "SUNDAY"}
@@ -63,7 +63,7 @@ def _date(text: str) -> date | None:
     return date(int(m[1]), int(m[2]), int(m[3])) if m else None
 
 
-def exceptions(value: str) -> list[ExceptionDayLLM]:
+def exceptions(value: str) -> list[ExceptionDayParsed]:
     if value.strip() in NONE_WORDS:
         return []
     out = []
@@ -75,7 +75,7 @@ def exceptions(value: str) -> list[ExceptionDayLLM]:
         if d is None:
             raise ParseError(f"예외 날짜 없음: {item!r}")
         rest = _DATE.sub("", item).strip()
-        out.append(ExceptionDayLLM(date=d, hours=[] if rest.startswith("휴무") or not rest else ranges(rest)))
+        out.append(ExceptionDayParsed(date=d, hours=[] if rest.startswith("휴무") or not rest else ranges(rest)))
     return out
 
 
@@ -91,7 +91,7 @@ def event(value: str) -> tuple[date | None, date | None, bool]:
     return found[0], (found[1] if len(found) > 1 else None), len(found) < 2
 
 
-def parse(text: str) -> tuple[VerifyPlaceLLM, dict]:
+def parse(text: str) -> tuple[VerifyPlaceParsed, dict]:
     """(결과, 통계). 통계: 버린 후보 수와 이유."""
     lines = [clean(l) for l in text.splitlines()]
     lines = [l for l in lines if l]
@@ -99,7 +99,7 @@ def parse(text: str) -> tuple[VerifyPlaceLLM, dict]:
     if verdict is None:
         raise ParseError("판정 줄 없음")
     if "없음" in verdict:
-        return VerifyPlaceLLM(exists=False, candidates=[]), {"dropped": 0}
+        return VerifyPlaceParsed(exists=False, candidates=[]), {"dropped": 0}
 
     blocks, cur = [], None
     for l in lines:
@@ -128,7 +128,7 @@ def parse(text: str) -> tuple[VerifyPlaceLLM, dict]:
         exc = exceptions(b.get("exceptions", "없음"))
         start, end, unresolved = event(b.get("event", "해당 없음"))
         hours = None if all(v is None for v in weekly.values()) and not exc else \
-            BusinessHoursLLM(weekly_hours=WeeklyHours(**weekly), exceptions=exc)
+            BusinessHoursParsed(weekly_hours=WeeklyHours(**weekly), exceptions=exc)
         loc = b.get("location_detail")
         places.append(GroundedPlace(
             evidence=b["evidence"], place_name=b["place_name"], address=b["address"],
@@ -137,4 +137,4 @@ def parse(text: str) -> tuple[VerifyPlaceLLM, dict]:
             event_period_unresolved=unresolved))
     if not places:
         raise ParseError("운영 중인데 읽은 후보 0개")
-    return VerifyPlaceLLM(exists=True, candidates=places), stats
+    return VerifyPlaceParsed(exists=True, candidates=places), stats
