@@ -75,6 +75,23 @@ class Settings(BaseSettings):
     # 두고 GPU 7초 + Gemini 8초로 나눴다. Gemini 대체 때 p95(8.3초)를 넘으면 유사도 순서로 대체된다.
     RECOMMEND_GEMINI_RESERVE_RERANK: float = 8.0
 
+    # analyze-video 를 Gemini(영상 읽기·판정·관찰 기록) → GPU Gemma(장소 추출) → Jev(카테고리)로
+    # 나눴다(11/3). Gemma 는 영상마다 1번 부른다. GPU 동시 처리(max-num-seqs 8) 중 이만큼만 쓴다 —
+    # 나머지는 extract·코스 추천 몫(docs/6 5-5 "배치가 실시간을 굶기면 안 된다").
+    ANALYZE_VIDEO_GPU_PARALLEL: int = 3
+    # Gemma 추출 1번의 상한. 벤치 실측(동시 4건, 11/2) 5.9~53.6초. 콜드 스타트(12~106초)는 분석
+    # 시작 때 보내는 깨우기 요청이 Gemini 분석 시간(40~70초) 동안 먼저 치른다.
+    TIMEOUT_ANALYZE_VIDEO_GPU: float = 90.0
+    # Gemma 추출 출력 상한. 장소가 7곳쯤인 영상이 890~991토큰이라(11/2·11/3 벤치) 공용 1024 로는 잘린다.
+    ANALYZE_VIDEO_GPU_MAX_TOKENS: int = 2048
+
+    # 카테고리 분류 — TypeSafe Jev(결정 모델). 키는 .env 의 TYPESAFE_API_KEY.
+    TYPESAFE_API_KEY: str | None = None
+    JEV_URL: str = "https://api.typesafe.ai/v1/systemone"
+    JEV_MODEL: str = "jev-latest"
+    # 실측 p95 0.28초·최대 1.12초(559건, 11/2~3, 로컬). 실패하면 2번 더 부른다.
+    TIMEOUT_JEV: float = 2.0
+
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
 
