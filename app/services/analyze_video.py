@@ -56,7 +56,7 @@ def _failed(url: str, code: str) -> VideoAnalysisResult:
 
 
 def _always_open() -> BusinessHours:
-    # 24시간 영업은 00:00~23:59 다(verify_place_structure.yaml 과 같은 약속).
+    # 24시간 영업은 00:00~23:59 다(verify_place_search.yaml 과 같은 약속).
     # 검색으로 확인한 값이 아니라서 estimated 를 켠다.
     day = [TimeRange(open_time="00:00", close_time="23:59")]
     week = WeeklyHours(**{key: day for key in WeeklyHours.model_fields})
