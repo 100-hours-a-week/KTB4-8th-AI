@@ -1,6 +1,7 @@
 # 운영용 GPU 서빙: Modal L40S 에 vLLM 으로 Gemma 31B(FP8)를 띄운다.
 # AI 서버의 GPU_BASE_URL 이 이 앱의 주소다(app/core/config.py). extract·recommend-courses 가
 # 먼저 여기로 오고, 실패하거나 시간을 넘기면 Gemini 로 넘어간다(app/models/factory.py).
+# analyze-video 의 장소 추출도 여기로 오고, 이쪽은 Gemini 대체가 없다(app/services/analyze_video.py).
 #
 # 구성(10/28 결정): compiled + GPU 메모리 스냅샷 + vLLM Sleep Mode. 10/27 측정에서 콜드 스타트
 # 12.6~42.9초(중앙값 19.5), 웜 p50 4.87초. GPU 스냅샷은 Modal 알파 기능이라, 문제가 생기면
@@ -61,8 +62,10 @@ COMMON = dict(
     gpu="L40S",
     volumes={"/cache": hf_volume, "/root/.cache/vllm": vllm_volume},
     secrets=[modal.Secret.from_name("keepgo-vllm-key")],
-    # 마지막 요청 뒤 15분 유지(10/28 결정). 영상 분석(약 10분) 뒤 챗봇을 쓸 시간까지 덮는다.
-    scaledown_window=15 * 60,
+    # 마지막 요청 뒤 5분 유지. 10/28 엔 영상 분석(약 10분) 뒤 챗봇을 쓸 시간까지 덮으려 15분이었는데,
+    # 분리 뒤 영상 20개 분석이 3분 22초로 줄었고(11/3 실측) 대기 15분이 한 번에 약 $0.59 라 줄였다(11/3 결정).
+    # 5분 넘게 지나 챗봇을 열면 콜드 스타트(12~43초) 동안 Gemini 로 넘어간다 — 실패가 아니라 느려질 뿐이다.
+    scaledown_window=5 * 60,
     # 비용 상한(시간당 약 $2). 넘치는 요청은 줄을 서다 AI 서버에서 Gemini 로 넘어간다.
     max_containers=1,
     timeout=60 * 60,

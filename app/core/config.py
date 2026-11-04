@@ -57,8 +57,9 @@ class Settings(BaseSettings):
     # 속도 우선으로 잡은 값이다 — 429 가 보이면 이 값을 낮춘다.
     VERIFY_PLACE_PARALLEL: int = 10
 
-    # extract·recommend-courses 를 Modal GPU(vLLM, Gemma 31B)로 먼저 보낸다. 실패하거나
-    # 시간을 넘기면 남은 시간으로 Gemini 를 부른다. 꺼져 있으면 지금처럼 Gemini 만 쓴다.
+    # extract·recommend-courses 는 Modal GPU(vLLM, Gemma 31B)로 먼저 보내고, 실패하거나
+    # 시간을 넘기면 남은 시간으로 Gemini 를 부른다. analyze-video 의 장소 추출은 GPU 만 쓴다
+    # (실패하면 재시도 후 영상 failed). 꺼져 있으면 extract·추천은 Gemini 만, 영상 분석은 failed.
     # URL·키는 .env 에 넣는다(다른 키와 같다).
     GPU_ENABLED: bool = False
     GPU_BASE_URL: str | None = None  # Modal 엔드포인트 루트(/v1 없이)
@@ -67,10 +68,31 @@ class Settings(BaseSettings):
     # extract 의 GPU 호출 상한. 웜 실측 4~11초(10/28, 구조화 출력). 콜드면 여기서 끊기고
     # 남은 15초로 Gemini 를 부른다 — 콜드 스타트(12~106초)는 이 안에 못 들어온다.
     TIMEOUT_EXTRACT_GPU: float = 15.0
-    # recommend-courses 각 단계(재순위·조합)에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
+    # recommend-courses 조합에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
     # Gemini 기준선 p95(재순위 8.3초·조합 10.3초, 10/20)에 맞춰 5초에서 10초로 올렸다.
-    # 재순위는 GPU 5초 + Gemini 10초, 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
+    # 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
     RECOMMEND_GEMINI_RESERVE: float = 10.0
+
+    # analyze-video 를 Gemini(영상 읽기·판정·관찰 기록) → GPU Gemma(장소 추출) → Jev(카테고리)로
+    # 나눴다(11/3). Gemma 는 영상마다 1번 부른다. GPU 동시 처리(max-num-seqs 8) 중 이만큼만 쓴다 —
+    # 나머지는 extract·코스 추천 몫(docs/6 5-5 "배치가 실시간을 굶기면 안 된다").
+    ANALYZE_VIDEO_GPU_PARALLEL: int = 3
+    # Gemma 추출 1번의 상한. 벤치 실측(동시 4건, 11/2) 5.9~53.6초. 콜드 스타트(12~106초)는 분석
+    # 시작 때 보내는 깨우기 요청이 Gemini 분석 시간(40~70초) 동안 먼저 치른다.
+    TIMEOUT_ANALYZE_VIDEO_GPU: float = 90.0
+    # Gemma 추출 출력 상한. 장소가 7곳쯤인 영상이 890~991토큰이라(11/2·11/3 벤치) 공용 1024 로는 잘린다.
+    ANALYZE_VIDEO_GPU_MAX_TOKENS: int = 2048
+
+    # 카테고리 분류 — TypeSafe Jev(결정 모델). 키는 .env 의 TYPESAFE_API_KEY.
+    TYPESAFE_API_KEY: str | None = None
+    JEV_URL: str = "https://api.typesafe.ai/v1/systemone"
+    # 버전을 고정한다 — RECOMMEND_JEV_MIN_SCORE 를 이 버전으로 쟀다(11/4). 올리면 임계값을 다시 잰다.
+    JEV_MODEL: str = "jev-1.14.0"
+    # 실측 p95 0.28초·최대 1.12초(559건, 11/2~3, 로컬). 실패하면 2번 더 부른다.
+    TIMEOUT_JEV: float = 2.0
+    # 재순위에서 이 확률보다 낮은 후보를 뺀다. 벤치(11/4)에서 조건에 반대되는 곳은 최대 0.21, 맞는 곳은
+    # 최소 0.25 였다. 실제 요청 33건에서 후보의 83% 가 남는다. 간격이 좁고 같은 데이터로 고른 값이다.
+    RECOMMEND_JEV_MIN_SCORE: float = 0.25
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"

@@ -12,7 +12,7 @@ from langsmith import trace
 
 from app.core.config import settings
 from app.core.exceptions import InternalServerError, LLMRateLimitedError, LLMTimeoutError
-from app.core.logging import logger, report_handled_error_throttled
+from app.core.logging import logger, report_handled_error, report_handled_error_throttled
 
 # docs/6 5-2절: 영상 분석(멀티모달) 60초. 시도 1번당 상한이다.
 _VIDEO_TIMEOUT = 120.0
@@ -39,9 +39,14 @@ def get_llm() -> BaseChatModel:
     raise ValueError(f"지원하지 않는 LLM_PROVIDER입니다 : {settings.LLM_PROVIDER!r}")
 
 
+def _gpu_root() -> str:
+    # 끝의 "/" 나 "/v1" 이 남으면 //v1, /v1/v1 로 나가 Modal 이 500·404 를 낸다(10/28 운영).
+    return settings.GPU_BASE_URL.strip().rstrip("/").removesuffix("/v1")
+
+
 @lru_cache(maxsize=1)
 def get_gpu_llm() -> ChatOpenAI | None:
-    """Modal 의 vLLM(OpenAI 호환 API). GPU_ENABLED 가 꺼져 있으면 None.
+    """Modal 의 vLLM(OpenAI 호환 API). GPU_ENABLED 가 꺼져 있거나 주소·키가 비어 있으면 None.
 
     재시도는 하지 않는다 — 실패하면 호출하는 쪽이 Gemini 로 넘어간다.
     temperature 0 은 10/27 실측과 같은 값이다.
@@ -50,16 +55,39 @@ def get_gpu_llm() -> ChatOpenAI | None:
     """
     if not settings.GPU_ENABLED:
         return None
-    # 끝의 "/" 나 "/v1" 이 남으면 //v1, /v1/v1 로 나가 Modal 이 500·404 를 낸다(10/28 운영).
-    root = settings.GPU_BASE_URL.strip().rstrip("/").removesuffix("/v1")
+    # 주소나 키가 비면 아래에서 None.strip()·OpenAIError 가 Gemini 대체 바깥에서 터져 요청이 실패한다.
+    # 공백만 있으면 요청마다 "Connection error" 로 실패해 네트워크 장애처럼 보인다(11/2 실측).
+    # 서버는 살리고 GPU 만 끈 채 Sentry 로 알린다 — lru_cache 라 프로세스마다 한 번 보고한다.
+    missing = [name for name in ("GPU_BASE_URL", "GPU_API_KEY") if not (getattr(settings, name) or "").strip()]
+    if missing:
+        # 예외를 붙여 보낸다. 메시지만 보내면 다른 처리된 실패와 한 이슈로 묶일 수 있다.
+        report_handled_error("get_gpu_llm", "gpu_config_missing", ValueError(f"{', '.join(missing)} 비어 있음"))
+        return None
     return ChatOpenAI(
         model=settings.GPU_MODEL,
-        base_url=f"{root}/v1",
+        base_url=f"{_gpu_root()}/v1",
         api_key=settings.GPU_API_KEY,
         temperature=0,
         max_tokens=1024,
         max_retries=0,
     )
+
+
+async def wake_gpu() -> None:
+    """GPU 컨테이너를 깨운다. 생성하지 않는 요청(GET /v1/models)이라 GPU 자리를 쓰지 않는다.
+
+    부르는 쪽이 create_task 로 띄우고 기다리지 않는다. 깨우기용이라 실패해도 조용히 넘어간다 —
+    GPU 가 정말 고장이면 뒤따르는 추출 호출이 실패하고 거기서 보고한다.
+    타임아웃은 Modal 웹 요청 상한(150초)이다 — 콜드 스타트(12~106초) 동안 기다려야 깨워진다.
+    """
+    if get_gpu_llm() is None:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=150) as client:
+            await client.get(f"{_gpu_root()}/v1/models",
+                             headers={"Authorization": f"Bearer {settings.GPU_API_KEY}"})
+    except httpx.HTTPError as exc:
+        logger.warning("wake_gpu 실패 detail=%r", exc)
 
 
 async def invoke_gpu_first(
