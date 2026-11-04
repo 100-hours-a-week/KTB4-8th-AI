@@ -62,8 +62,10 @@ COMMON = dict(
     gpu="L40S",
     volumes={"/cache": hf_volume, "/root/.cache/vllm": vllm_volume},
     secrets=[modal.Secret.from_name("keepgo-vllm-key")],
-    # 마지막 요청 뒤 15분 유지(10/28 결정). 영상 분석(약 10분) 뒤 챗봇을 쓸 시간까지 덮는다.
-    scaledown_window=15 * 60,
+    # 마지막 요청 뒤 5분 유지. 10/28 엔 영상 분석(약 10분) 뒤 챗봇을 쓸 시간까지 덮으려 15분이었는데,
+    # 분리 뒤 영상 20개 분석이 3분 22초로 줄었고(11/3 실측) 대기 15분이 한 번에 약 $0.59 라 줄였다(11/3 결정).
+    # 5분 넘게 지나 챗봇을 열면 콜드 스타트(12~43초) 동안 Gemini 로 넘어간다 — 실패가 아니라 느려질 뿐이다.
+    scaledown_window=5 * 60,
     # 비용 상한(시간당 약 $2). 넘치는 요청은 줄을 서다 AI 서버에서 Gemini 로 넘어간다.
     max_containers=1,
     timeout=60 * 60,

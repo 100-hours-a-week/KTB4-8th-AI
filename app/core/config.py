@@ -89,9 +89,13 @@ class Settings(BaseSettings):
     # 카테고리 분류 — TypeSafe Jev(결정 모델). 키는 .env 의 TYPESAFE_API_KEY.
     TYPESAFE_API_KEY: str | None = None
     JEV_URL: str = "https://api.typesafe.ai/v1/systemone"
-    JEV_MODEL: str = "jev-latest"
+    # 버전을 고정한다 — RECOMMEND_JEV_MIN_SCORE 를 이 버전으로 쟀다(11/4). 올리면 임계값을 다시 잰다.
+    JEV_MODEL: str = "jev-1.14.0"
     # 실측 p95 0.28초·최대 1.12초(559건, 11/2~3, 로컬). 실패하면 2번 더 부른다.
     TIMEOUT_JEV: float = 2.0
+    # 재순위에서 이 확률보다 낮은 후보를 뺀다. 벤치(11/4)에서 조건에 반대되는 곳은 최대 0.21, 맞는 곳은
+    # 최소 0.25 였다. 실제 요청 33건에서 후보의 83% 가 남는다. 간격이 좁고 같은 데이터로 고른 값이다.
+    RECOMMEND_JEV_MIN_SCORE: float = 0.25
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
