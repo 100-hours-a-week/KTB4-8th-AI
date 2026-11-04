@@ -82,10 +82,6 @@ RecommendCoursesResponse = APIResponse[RecommendCoursesData]
 
 # LLM 전용. 이동시간·도착 시각·총 소요 시간은 모델이 아니라 코드가 채운다 —
 # 모델이 적은 분 단위 숫자는 그럴듯하게 지어낸 값이라 믿을 수 없다.
-class RerankLLM(BaseModel):
-    place_ids: list[str] = Field(description="조건에 맞고 방문 시각에 영업 중인 장소의 place_id. 적합도 내림차순")
-
-
 class DraftPlace(BaseModel):
     place_id: str = Field(description="장소 식별자 (후보 목록에 있는 값만)")
     stay_minutes: int = Field(description="예상 체류 시간(분)")

@@ -68,13 +68,10 @@ class Settings(BaseSettings):
     # extract 의 GPU 호출 상한. 웜 실측 4~11초(10/28, 구조화 출력). 콜드면 여기서 끊기고
     # 남은 15초로 Gemini 를 부른다 — 콜드 스타트(12~106초)는 이 안에 못 들어온다.
     TIMEOUT_EXTRACT_GPU: float = 15.0
-    # recommend-courses 각 단계(재순위·조합)에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
+    # recommend-courses 조합에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
     # Gemini 기준선 p95(재순위 8.3초·조합 10.3초, 10/20)에 맞춰 5초에서 10초로 올렸다.
     # 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
     RECOMMEND_GEMINI_RESERVE: float = 10.0
-    # 재순위만 따로 둔다 — GPU 5초 몫이 웜 실측 4.2~4.8초에 빠듯해서(11/2), 단계 15초는 그대로
-    # 두고 GPU 7초 + Gemini 8초로 나눴다. Gemini 대체 때 p95(8.3초)를 넘으면 유사도 순서로 대체된다.
-    RECOMMEND_GEMINI_RESERVE_RERANK: float = 8.0
 
     # analyze-video 를 Gemini(영상 읽기·판정·관찰 기록) → GPU Gemma(장소 추출) → Jev(카테고리)로
     # 나눴다(11/3). Gemma 는 영상마다 1번 부른다. GPU 동시 처리(max-num-seqs 8) 중 이만큼만 쓴다 —

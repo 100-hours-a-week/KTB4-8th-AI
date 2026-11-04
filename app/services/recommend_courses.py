@@ -269,9 +269,7 @@ def _categories(req: RecommendCoursesRequest) -> str:
     return ", ".join(req.category) if req.category else ""
 
 
-async def _structured(
-    stage: str, prompt: list[BaseMessage], schema: type[BaseModel], budget: float, gemini_reserve: float
-) -> BaseModel:
+async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseModel], budget: float) -> BaseModel:
     # factory 의 공용 인스턴스는 그대로 두고 이 엔드포인트에서만 thinking 을 줄인다.
     llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
     chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
@@ -281,7 +279,7 @@ async def _structured(
     try:
         result, model = await invoke_gpu_first(
             f"{_ENDPOINT}:{stage}", prompt, gpu_chain, chain,
-            total=budget, gpu_timeout=budget - gemini_reserve,
+            total=budget, gpu_timeout=budget - settings.RECOMMEND_GEMINI_RESERVE,
         )
     except Exception as exc:
         log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL,
@@ -358,9 +356,7 @@ async def _compose(
         ),
     )
     try:
-        parsed: ComposeLLM = await _structured(
-            "compose", prompt, ComposeLLM, budget, settings.RECOMMEND_GEMINI_RESERVE
-        )
+        parsed: ComposeLLM = await _structured("compose", prompt, ComposeLLM, budget)
     except Exception as exc:
         logger.warning("%s 코스 조합 실패, 규칙 기반 조합으로 대체: %r", _ENDPOINT, exc)
         return _rule_based(req, ranked)
