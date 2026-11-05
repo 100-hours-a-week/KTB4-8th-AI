@@ -1,13 +1,13 @@
 """장소 검증 서비스 (docs/1 2-4, IA_SRS AI-004).
 
-흐름: 웹검색으로 사실 수집 → 형식에 맞춰 구조화 → 지도 API 로 좌표.
+흐름: 웹검색(고정 형식 텍스트) → 코드로 파싱 → 지도 API 로 좌표.
 
-검색과 구조화를 두 번의 호출로 나눈 이유: 랭체인 with_structured_output 을 걸면
+검색 호출에 구조화 출력을 걸지 않는 이유: 랭체인 with_structured_output 을 걸면
 Google 검색 그라운딩이 조용히 빠진다 — 에러 없이 "성공"하지만 검색어 0개·출처
-0개였다(실측, bind_tools 후 적용·invoke 때 tools 전달 둘 다). Gemini 3 자체는
-그라운딩과 구조화 출력의 병용을 지원한다고 하니(Google 블로그) 랭체인 경로의
-문제로 보인다. 네이티브 SDK 로 한 호출에 합칠 여지는 있으나 확인 전이다.
-구조화 단계는 검색을 안 하니 그라운딩 과금은 1회만 나간다.
+0개였다(실측, bind_tools 후 적용·invoke 때 tools 전달 둘 다). 그래서 예전엔 구조화를
+Gemini 호출 하나로 따로 했는데(11/3 까지), 검색 프롬프트가 정해진 형식으로 쓰게 하고
+코드(verify_place_parser)가 읽도록 바꿨다. 같은 50곳 실측: 장소당 Gemini 토큰 비용
+−32%, 시간은 비슷, 파싱 50/50(~/keepgo-bench/split_compare/search_format).
 
 동일성 검증: 실존만 확인하면 "실제로 있지만 영상 속 가게가 아닌 곳"이 주소·
 좌표까지 진짜라 끝까지 통과하고, 백엔드가 1번을 자동 채택해 엉뚱한 가게가
@@ -41,16 +41,20 @@ from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
 from app.schemas.business_hours import BusinessHours
 from app.schemas.verify_place import (
-    BusinessHoursLLM,
+    BusinessHoursParsed,
     GroundedPlace,
     PlaceCandidate,
     VerifyPlaceData,
-    VerifyPlaceLLM,
+    VerifyPlaceParsed,
     VerifyPlaceRequest,
 )
+from app.services.verify_place_parser import ParseError, parse
 
 _ENDPOINT = "verify-place"
 _SEARCH_TOOL = {"google_search": {}}
+# 형식을 못 읽으면 검색을 한 번 더 한다. 그래도 못 읽으면 llm_invalid_response(영상 failed).
+# 검색이 20초 안팎이라 두 번째 시도는 verify-place 60초 안에 못 끝날 수 있다 — 그러면 llm_timeout.
+_SEARCH_ATTEMPTS = 2
 # 영업시간 데이터가 Asia/Seoul 기준이다. 서버(컨테이너)는 UTC 일 수 있어서
 # date.today() 를 쓰면 한국 자정~오전 9시에 하루 어긋난다.
 _KST = ZoneInfo("Asia/Seoul")
@@ -68,7 +72,7 @@ def _event_period(req: VerifyPlaceRequest) -> str:
 
 @traceable(name="verify-place:search", run_type="chain")
 async def _search(req: VerifyPlaceRequest) -> str:
-    """1단계: 그라운딩으로 웹검색. 결과는 자유 서술 텍스트."""
+    """그라운딩으로 웹검색. 결과는 고정 형식 텍스트(verify_place_search.yaml)."""
     prompt = load_prompt(
         "verify_place_search",
         place_name=req.place_name,
@@ -90,37 +94,24 @@ async def _search(req: VerifyPlaceRequest) -> str:
     return message.text
 
 
-@traceable(name="verify-place:structure", run_type="chain")
-async def _structure(req: VerifyPlaceRequest, search_result: str) -> VerifyPlaceLLM:
-    """2단계: 검색 결과를 스키마로 옮긴다. 검색 도구는 쓰지 않는다."""
-    prompt = load_prompt(
-        "verify_place_structure",
-        place_name=req.place_name,
-        region=_or_none(req.region),
-        summary=_or_none(req.summary),
-        search_result=search_result,
-    )
-    chain = get_llm().with_structured_output(
-        VerifyPlaceLLM, method="json_schema", include_raw=True
-    )
+@traceable(name="verify-place:parse", run_type="parser")
+def _parse(search_result: str) -> VerifyPlaceParsed:
+    parsed, _stats = parse(search_result)  # 통계(버린 후보 수)는 측정용이라 여기선 쓰지 않는다
+    return parsed
 
-    started = time.perf_counter()
-    try:
-        result = await chain.ainvoke(prompt)
-    except Exception as exc:
-        log_llm(f"{_ENDPOINT}:structure", settings.GOOGLE_MODEL,
-                time.perf_counter() - started, success=False, detail=str(exc))
-        raise
-    latency = time.perf_counter() - started
 
-    if result["parsing_error"] is not None:
-        detail = str(result["parsing_error"])
-        log_llm(f"{_ENDPOINT}:structure", settings.GOOGLE_MODEL, latency,
-                success=False, detail=detail)
-        raise LLMInvalidResponseError(detail)
-
-    log_llm(f"{_ENDPOINT}:structure", settings.GOOGLE_MODEL, latency, success=True)
-    return result["parsed"]
+async def _search_and_parse(req: VerifyPlaceRequest) -> VerifyPlaceParsed:
+    last: ParseError | None = None
+    for attempt in range(1, _SEARCH_ATTEMPTS + 1):
+        search_result = await _search(req)
+        try:
+            return _parse(search_result)
+        except ParseError as exc:
+            # 원문 앞부분을 남긴다 — 무엇이 형식을 깼는지 봐야 프롬프트나 파서를 고칠 수 있다.
+            logger.warning("verify-place parse_failed attempt=%d place=%s reason=%s head=%r",
+                           attempt, req.place_name, exc, search_result[:300])
+            last = exc
+    raise LLMInvalidResponseError(f"검색 결과 형식을 읽지 못함: {last}")
 
 
 def _apply_request_dates(req: VerifyPlaceRequest, place: GroundedPlace) -> GroundedPlace:
@@ -139,7 +130,7 @@ def _apply_request_dates(req: VerifyPlaceRequest, place: GroundedPlace) -> Groun
     return place.model_copy(update=update) if update else place
 
 
-def _to_business_hours(hours: BusinessHoursLLM | None) -> BusinessHours | None:
+def _to_business_hours(hours: BusinessHoursParsed | None) -> BusinessHours | None:
     """모델이 적은 영업시간을 응답 형식으로 바꾼다.
 
     모델은 옮겨 적기만 하고, 정리는 여기서 한다 — 예외일 목록을 날짜 dict 로
@@ -154,8 +145,7 @@ def _to_business_hours(hours: BusinessHoursLLM | None) -> BusinessHours | None:
 
 
 async def _verify(req: VerifyPlaceRequest) -> VerifyPlaceData:
-    search_result = await _search(req)
-    grounded = await _structure(req, search_result)
+    grounded = await _search_and_parse(req)
 
     if not grounded.exists or not grounded.candidates:
         return VerifyPlaceData(exists=False, candidates=[])
@@ -203,7 +193,7 @@ async def _verify(req: VerifyPlaceRequest) -> VerifyPlaceData:
 @traceable(name="verify-place", run_type="chain")
 async def verify_place(req: VerifyPlaceRequest) -> VerifyPlaceData:
     try:
-        # 검색·구조화·좌표 조회를 합쳐 백엔드가 기다리는 시간 안에 끝낸다
+        # 검색·파싱·좌표 조회를 합쳐 백엔드가 기다리는 시간 안에 끝낸다
         # (docs/1 비고: verify-place 60초).
         return await asyncio.wait_for(_verify(req), timeout=settings.TIMEOUT_VERIFY_PLACE)
     except AIServerError:

@@ -36,7 +36,9 @@ class Pick:
 
     candidate: RecommendCandidate
     stay_minutes: int
-    reason: str
+    # 화면에서 쓰지 않아 LLM 에 쓰게 하지 않는다 — GPU 조합 출력의 절반 가까이가 이 문장이었다(10/28).
+    # 응답 필드는 명세대로 남기고 빈 문자열을 보낸다. 백엔드 확인 후 필드째 뺀다.
+    reason: str = ""
 
 
 def distance_m(a: LatLng, b: LatLng) -> float:
