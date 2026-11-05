@@ -38,25 +38,26 @@ class VerifyPlaceData(BaseModel):
 VerifyPlaceResponse = APIResponse[VerifyPlaceData]
 
 
-# 검색 결과를 파싱한 모양(verify_place_parser). 예전엔 Gemini 구조화 출력이라 이름이 …LLM
-# 이었다(11/3 파서로 교체). 예외일은 목록으로 받고 코드가 dict 로 바꾼다. 지난 날짜도
-# 코드가 걸러낸다. timezone·estimated 는 코드가 채운다.
-class ExceptionDayParsed(BaseModel):
+# LLM 전용. Gemini 구조화 출력이 날짜를 키로 쓰는 dict 를 잘 다루는지
+# 확인하지 않았으므로 목록으로 받고, 코드가 dict 로 바꾼다. 지난 날짜도
+# 코드가 걸러낸다. timezone·estimated 는 모델이 알 필요가 없어 코드가 채운다.
+class ExceptionDayLLM(BaseModel):
     date : date_type = Field(description = "임시 휴무·단축 영업 날짜")
     hours : list[TimeRange] = Field(description = "그날 영업 시간대. 휴무면 []")
 
 
-class BusinessHoursParsed(BaseModel):
+class BusinessHoursLLM(BaseModel):
     weekly_hours : WeeklyHours = Field(description = "7개 요일 모두. 모르면 null, 휴무면 []")
-    exceptions : list[ExceptionDayParsed] = Field(description = "영업측 공지에서 찾은 임시 휴무·단축 영업일")
+    exceptions : list[ExceptionDayLLM] = Field(description = "영업측 공지에서 찾은 임시 휴무·단축 영업일")
 
 
-# 웹검색 결과를 파싱해 옮겨 담는 형식이다(verify_place_parser). 좌표는 검색 결과가 아니라
-# 지도 API 가 채운다 — 모델이 적은 위경도는 그럴듯한 숫자를 지어낼 위험이 크다.
+# LLM 전용. 웹검색 결과를 옮겨 담는 형식이다. 좌표는 LLM 이 아니라 지도 API 가
+# 채운다 — 모델이 적은 위경도는 그럴듯한 숫자를 지어낼 위험이 크다.
 class GroundedPlace(BaseModel):
-    # 동일성 검증용. 검색 출력 형식에서도 후보마다 근거를 맨 앞에 쓰게 한다 — 근거를
-    # 먼저 적게 해야 실제로 확인한다. 이 칸이 없을 땐 "실존하지만 영상 속 가게가 아닌
-    # 곳"이 그대로 통과했다. 응답으로는 나가지 않는다.
+    # 동일성 검증용. 맨 앞에 두는 게 핵심이다 — 필드 순서가 모델의 작업 순서라,
+    # 근거를 먼저 적게 해야 실제로 확인한다(screen_text 와 같은 원리). 이 칸이
+    # 없을 땐 "실존하지만 영상 속 가게가 아닌 곳"이 그대로 통과했다. 응답으로는
+    # 나가지 않는다.
     evidence : str = Field(description = "찾던 장소의 특징 중 무엇이 이 가게에 있는지, 검색 결과의 어디서 확인했는지. 확인 못 했으면 빈 문자열")
     place_name : str = Field(description = "검색으로 확인한 정확한 상호 (지점명 포함)")
     address : str = Field(description = "도로명 주소. 좌표 조회에 그대로 쓰이므로 가능한 한 완전하게")
@@ -65,12 +66,12 @@ class GroundedPlace(BaseModel):
     location_detail : Optional[str] = Field(default = None, description = "주소에 없는 위치 정보: 건물명, 층, 가까운 역 출구. 검색 결과에 없으면 null")
     # 기본값을 두지 않는다 — 필수여야 모델이 "객체" 또는 "null"을 직접 적고,
     # 빠뜨림과 못 찾음이 구분된다(WeeklyHours 와 같은 이유).
-    business_hours : Optional[BusinessHoursParsed] = Field(description = "영업시간. 검색으로 못 찾으면 null")
+    business_hours : Optional[BusinessHoursLLM] = Field(description = "영업시간. 검색으로 못 찾으면 null")
     event_start_date : Optional[date] = Field(default = None, description = "기간 한정 행사의 시작일. 아니면 null")
     event_end_date : Optional[date] = Field(default = None, description = "기간 한정 행사의 종료일. 아니면 null")
     event_period_unresolved : bool = Field(description = "기간 한정 행사로 보이는데 종료일을 끝내 못 찾았으면 true")
 
 
-class VerifyPlaceParsed(BaseModel):
+class VerifyPlaceLLM(BaseModel):
     exists : bool = Field(description = "검색으로 실제 운영 중인 장소를 하나라도 찾았는지")
     candidates : list[GroundedPlace] = Field(description = "찾은 장소들. 지역·특징이 가장 잘 맞는 곳부터 순서대로")

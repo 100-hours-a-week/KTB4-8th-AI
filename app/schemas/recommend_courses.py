@@ -1,7 +1,7 @@
 from datetime import date
-from typing import Annotated, Optional
+from typing import Optional
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, Field
 
 from app.schemas.business_hours import BusinessHours
 from app.schemas.category import PlaceCategory
@@ -10,11 +10,6 @@ from app.schemas.extract import AvailableTime, VisitDatetime
 
 
 #요청 스키마
-# 백엔드가 정성 조건이 없을 때 query 를 빼지 않고 null 로 보내는 경우가 있다
-# (10/27 운영 로그의 422). 없다는 뜻은 같으므로 빈 문자열로 받는다.
-Query = Annotated[str, BeforeValidator(lambda v: "" if v is None else v)]
-
-
 class RecommendCandidate(BaseModel):
     """추천 후보 장소 모델"""
     place_id: str = Field(..., description="장소 식별자")
@@ -36,7 +31,7 @@ class HistoryPlace(BaseModel):
 # API 시트 기준: 요청 body에 request_id 없음
 class RecommendCoursesRequest(BaseModel):
     """코스 추천 요청 모델"""
-    query: Query = Field(default="", description="정성 조건. null 이면 빈 문자열로 본다")
+    query: str = Field(default="", description="정성 조건")
     candidates: list[RecommendCandidate] = Field(..., max_length=50, description="백엔드가 좌표 반경으로 1차 필터링한 후보 목록 (최대 50개)")
     history_place_ids: list[HistoryPlace] = Field(default_factory=list, max_length=50, description="최근 저장한 장소 목록, 취향 벡터 계산용 (최대 50개). 비어있으면 query만으로 검색")
     available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
@@ -82,9 +77,14 @@ RecommendCoursesResponse = APIResponse[RecommendCoursesData]
 
 # LLM 전용. 이동시간·도착 시각·총 소요 시간은 모델이 아니라 코드가 채운다 —
 # 모델이 적은 분 단위 숫자는 그럴듯하게 지어낸 값이라 믿을 수 없다.
+class RerankLLM(BaseModel):
+    place_ids: list[str] = Field(description="조건에 맞고 방문 시각에 영업 중인 장소의 place_id. 적합도 내림차순")
+
+
 class DraftPlace(BaseModel):
     place_id: str = Field(description="장소 식별자 (후보 목록에 있는 값만)")
     stay_minutes: int = Field(description="예상 체류 시간(분)")
+    reason: str = Field(description="이 장소가 선정된 근거 (한 문장)")
 
 
 class DraftCourse(BaseModel):
@@ -93,4 +93,4 @@ class DraftCourse(BaseModel):
 
 
 class ComposeLLM(BaseModel):
-    courses: list[DraftCourse] = Field(description="서로 다른 장소 조합의 코스 (3개를 채운다)")
+    courses: list[DraftCourse] = Field(description="서로 다른 장소 조합의 코스 (최대 3개)")
