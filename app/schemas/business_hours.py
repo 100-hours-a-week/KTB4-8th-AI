@@ -21,7 +21,7 @@ def _merge_split_midnight(ranges):
     - 23:59:59.x 마감은 자정 마감(00:00)으로 바꾼다.
     - {00:00, 00:00} 은 언제나 지운다. 그것만 있던 날은 [] (휴무)가 된다 — 실제로 휴무일
       앞날의 꼬리였다(용산은행나무포차 일요일). 24시간 영업은 00:00~23:59 로 오므로
-      (verify_place_structure.yaml 과 같은 약속) 여기에 걸리지 않는다.
+      (verify_place_search.yaml 과 같은 약속) 여기에 걸리지 않는다.
     """
     if not isinstance(ranges, list):
         return ranges
@@ -72,4 +72,4 @@ class BusinessHours(BaseModel):
         default_factory = dict,
         description = "임시 휴무·단축 영업. 영업측 공지 기준, 지난 날짜는 넣지 않는다. [] 는 그날 휴무"
     )
-    estimated : bool = Field(default = False, description = "주변 가게 영업시간으로 추정한 값인지")
+    estimated : bool = Field(default = False, description = "검색으로 확인하지 않고 추정한 값인지 (산책·명소의 24시간 기본값 등)")

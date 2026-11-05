@@ -78,9 +78,27 @@ class ExtractData(BaseModel):
     bot_message: str = Field(..., description="사용자에게 보여줄 응답 문구")
 
 
-class SlotsLLM(Slots):
-    """모델이 채우는 슬롯. 출발지만 좌표 대신 이름으로 받는다."""
+Weekday = Literal["월", "화", "수", "목", "금", "토", "일"]
+
+
+class SlotsLLM(BaseModel):
+    """모델이 채우는 슬롯. 출발지는 좌표 대신 이름으로 받는다.
+
+    날짜는 모델이 계산하지 않는다. 말한 표현만 옮기고, 실제 날짜는 코드가 오늘 날짜로
+    계산한다(services/slot_datetime.py). Gemma 31B 가 "토요일"을 일요일 날짜로
+    적었다(10/28, 2건 중 2건). Gemini 도 계산을 틀리면 막을 방법이 없었다.
+    """
     origin: Optional[str] = Field(default=None, description="이번 발화에서 말한 출발지 이름")
+    region: Optional[str] = Field(default=None, description="지역")
+    days_from_today: Optional[int] = Field(default=None, description="오늘 0, 내일 1, 모레 2")
+    weekday: Optional[Weekday] = Field(default=None, description="말한 요일. 주말은 토")
+    week: Optional[Literal["이번 주", "다음 주"]] = Field(
+        default=None, description="요일 앞에 '이번 주'·'다음 주'를 붙였을 때만. 요일만 말했으면 null"
+    )
+    month_day: Optional[str] = Field(default=None, description="말한 날짜 MM-DD (예: 11월 3일 → 11-03)")
+    time: Optional[str] = Field(default=None, description="말한 시각 HH:MM (24시간)")
+    available_time: Optional[AvailableTime] = Field(default=None, description="외출 가능 시간(분) (180·360·540)")
+    category: Optional[list[PlaceCategory]] = Field(default=None, description="카테고리 목록. null 은 이번 턴에서 다루지 않음, [] 는 상관없음")
 
 
 class ExtractDataLLM(BaseModel):
