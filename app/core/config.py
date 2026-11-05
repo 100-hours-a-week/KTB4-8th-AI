@@ -21,12 +21,9 @@ class Settings(BaseSettings):
     # 재순위 4~5초·조합 5초라, 고정 4/5초로 자르면 거의 항상 폴백이 됐다.
     # 15초에서 25초로 늘렸다 — 10/23 운영에서 재순위 4.6초 뒤 조합이 8.4초에
     # 끊겨 규칙 조합으로 떨어졌다. 백엔드가 이 요청을 기다리는 시간보다 짧아야 한다.
-    # 25초에서 55초로 늘렸다 — 10/28 운영에서 Gemini 재순위가 5초 몫에 끊겼다(CancelledError).
-    # GPU 몫과 Gemini 몫(RECOMMEND_GEMINI_RESERVE)을 둘 다 담으려고 재순위 상한도 15초로 올렸다.
-    # 조합은 GPU 웜 실측 13.7~22.8초(출력 244~413토큰, 약 18 tok/s)라 GPU 몫이 25초를 넘게 잡았다.
-    TIMEOUT_RECOMMEND_COURSES: float = 55.0
+    TIMEOUT_RECOMMEND_COURSES: float = 25.0
     RECOMMEND_BUDGET_RETRIEVAL: float = 1.5  # 쿼리 임베딩 + Chroma 검색, 상한
-    RECOMMEND_BUDGET_RERANK: float = 15.0  # 상한. 조합 몫을 남기도록 더 줄어들 수 있다
+    RECOMMEND_BUDGET_RERANK: float = 10.0  # 상한. 조합 몫을 남기도록 더 줄어들 수 있다
     RECOMMEND_BUDGET_MAP: float = 3.0  # 상한. 남은 시간이 적으면 줄어든다
     # 남은 시간이 이보다 적으면 LLM 을 부르지 않고 바로 폴백한다
     RECOMMEND_MIN_LLM_SECONDS: float = 2.0
@@ -56,43 +53,6 @@ class Settings(BaseSettings):
     # + 지도 API 라 약 20~28초 걸린다. 10 이면 묶음 하나의 검증이 한 번에 끝난다.
     # 속도 우선으로 잡은 값이다 — 429 가 보이면 이 값을 낮춘다.
     VERIFY_PLACE_PARALLEL: int = 10
-
-    # extract·recommend-courses 는 Modal GPU(vLLM, Gemma 31B)로 먼저 보내고, 실패하거나
-    # 시간을 넘기면 남은 시간으로 Gemini 를 부른다. analyze-video 의 장소 추출은 GPU 만 쓴다
-    # (실패하면 재시도 후 영상 failed). 꺼져 있으면 extract·추천은 Gemini 만, 영상 분석은 failed.
-    # URL·키는 .env 에 넣는다(다른 키와 같다).
-    GPU_ENABLED: bool = False
-    GPU_BASE_URL: str | None = None  # Modal 엔드포인트 루트(/v1 없이)
-    GPU_API_KEY: str | None = None  # Modal Secret keepgo-vllm-key 와 같은 값
-    GPU_MODEL: str = "gemma-31b"  # vllm --served-model-name
-    # extract 의 GPU 호출 상한. 웜 실측 4~11초(10/28, 구조화 출력). 콜드면 여기서 끊기고
-    # 남은 15초로 Gemini 를 부른다 — 콜드 스타트(12~106초)는 이 안에 못 들어온다.
-    TIMEOUT_EXTRACT_GPU: float = 15.0
-    # recommend-courses 조합에서 GPU 가 실패했을 때 Gemini 몫으로 남기는 시간.
-    # Gemini 기준선 p95(재순위 8.3초·조합 10.3초, 10/20)에 맞춰 5초에서 10초로 올렸다.
-    # 조합은 약 GPU 26.5초 + Gemini 10초가 된다.
-    RECOMMEND_GEMINI_RESERVE: float = 10.0
-
-    # analyze-video 를 Gemini(영상 읽기·판정·관찰 기록) → GPU Gemma(장소 추출) → Jev(카테고리)로
-    # 나눴다(11/3). Gemma 는 영상마다 1번 부른다. GPU 동시 처리(max-num-seqs 8) 중 이만큼만 쓴다 —
-    # 나머지는 extract·코스 추천 몫(docs/6 5-5 "배치가 실시간을 굶기면 안 된다").
-    ANALYZE_VIDEO_GPU_PARALLEL: int = 3
-    # Gemma 추출 1번의 상한. 벤치 실측(동시 4건, 11/2) 5.9~53.6초. 콜드 스타트(12~106초)는 분석
-    # 시작 때 보내는 깨우기 요청이 Gemini 분석 시간(40~70초) 동안 먼저 치른다.
-    TIMEOUT_ANALYZE_VIDEO_GPU: float = 90.0
-    # Gemma 추출 출력 상한. 장소가 7곳쯤인 영상이 890~991토큰이라(11/2·11/3 벤치) 공용 1024 로는 잘린다.
-    ANALYZE_VIDEO_GPU_MAX_TOKENS: int = 2048
-
-    # 카테고리 분류 — TypeSafe Jev(결정 모델). 키는 .env 의 TYPESAFE_API_KEY.
-    TYPESAFE_API_KEY: str | None = None
-    JEV_URL: str = "https://api.typesafe.ai/v1/systemone"
-    # 버전을 고정한다 — RECOMMEND_JEV_MIN_SCORE 를 이 버전으로 쟀다(11/4). 올리면 임계값을 다시 잰다.
-    JEV_MODEL: str = "jev-1.14.0"
-    # 실측 p95 0.28초·최대 1.12초(559건, 11/2~3, 로컬). 실패하면 2번 더 부른다.
-    TIMEOUT_JEV: float = 2.0
-    # 재순위에서 이 확률보다 낮은 후보를 뺀다. 벤치(11/4)에서 조건에 반대되는 곳은 최대 0.21, 맞는 곳은
-    # 최소 0.25 였다. 실제 요청 33건에서 후보의 83% 가 남는다. 간격이 좁고 같은 데이터로 고른 값이다.
-    RECOMMEND_JEV_MIN_SCORE: float = 0.25
 
     EMBEDDING_PROVIDER: Literal["google", "local"] = "google"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"

@@ -1,19 +1,20 @@
 """코스 추천 서비스 (API 시트 "코스 추천", docs/4 3-2, IA_SRS AI-009~012).
 
-흐름: 후보 압축(취향 벡터 + 벡터 검색) → 영업 필터(코드) → 재순위(Jev) → 코스 조합(LLM)
+흐름: 후보 압축(취향 벡터 + 벡터 검색) → 재순위(LLM) → 코스 조합(LLM)
       → 방문 순서·이동시간·도착 시각 계산 → 외출 가능 시간 검증(코드).
 
 챗봇 화면의 동기 경로라 전체 15초 deadline 안에서 구간마다 예산을 두고
 (docs/6 5-3), 예산을 넘기거나 실패한 구간은 LLM 을 쓰지 않는 폴백으로 넘긴다
 (docs/6 5-6):
   - 후보 압축 실패 → 백엔드가 준 순서 그대로
-  - 재순위 실패    → 영업 필터를 지난 후보를 유사도 순서 그대로
+  - 재순위 실패    → 압축 단계의 유사도 순서 그대로
   - 코스 조합 실패 → 거리 기준 규칙 조합 + 템플릿 제목
 지도 API 장애(MapAPIError)만은 폴백하지 않고 map_api_error(502)로 올린다 —
 verify-place 와 같은 기준이고, API 시트에 이 엔드포인트의 502 가 명시돼 있다.
 
-재순위 전 영업 판단은 코드가 한다(_is_closed). 조합 프롬프트에는 사람이 읽는 문장으로
-바꿔 넣는다(_hours_text).
+영업시간·휴무일 판단은 아직 LLM 이 한다(재순위 프롬프트). business_hours 는
+객체로 받지만, 코드로 판정하는 건 다음 작업이다 — 지금은 사람이 읽는 문장으로
+바꿔 프롬프트에 넣는다(_hours_text).
 
 코스 추천도(match_score)는 후보 압축 때 Chroma 가 준 유사도로 계산한다. 압축에
 쓴 벡터(query + 카테고리 + 취향)와 같은 기준이라 코스 순서와 점수가 어긋나지 않는다.
@@ -23,7 +24,6 @@ import asyncio
 import math
 import time
 from collections.abc import Awaitable
-from datetime import date, datetime, timedelta
 
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
@@ -31,9 +31,8 @@ from pydantic import BaseModel
 from app.core.config import settings
 from app.core.exceptions import AIServerError, LLMInvalidResponseError, LLMTimeoutError
 from app.core.logging import log_llm, logger
-from app.integrations.jev_client import score_places
 from app.integrations.map_client import driving_minutes
-from app.models.factory import get_gpu_llm, get_llm, invoke_gpu_first, to_domain_error
+from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
 from app.retrieval.chroma_store import get_embeddings, search_places
 from app.retrieval.embedder import get_embedder
@@ -46,6 +45,7 @@ from app.schemas.recommend_courses import (
     RecommendCandidate,
     RecommendCoursesData,
     RecommendCoursesRequest,
+    RerankLLM,
 )
 from app.services import course_builder as cb
 
@@ -212,41 +212,6 @@ def _hours_text(hours: BusinessHours) -> str:
     return text
 
 
-def _day_ranges(hours: BusinessHours, day: date):
-    if day in hours.exceptions:
-        return hours.exceptions[day]
-    return getattr(hours.weekly_hours, _WEEKDAYS[day.weekday()][0])
-
-
-def _minutes(hhmm: str) -> int:
-    hour, minute = hhmm.split(":")
-    return int(hour) * 60 + int(minute)
-
-
-def _is_closed(hours: BusinessHours, when: datetime | None) -> bool:
-    """방문 일시에 닫혀 있는지. 모르면(방문 일시·그날 영업시간이 없음) 닫지 않은 것으로 본다."""
-    if when is None:
-        return False
-    today = _day_ranges(hours, when.date())
-    if not has_visit_time(when):  # 시각을 모르면 휴무일만 뺀다
-        return today == []
-    if today is None:
-        return False
-    now = when.hour * 60 + when.minute
-    for r in today:
-        start, end = _minutes(r.open_time), _minutes(r.close_time)
-        if end == 0 or r.close_time == "23:59":  # 자정 마감·24시간 영업
-            end = 24 * 60
-        if (start <= now < end) if end > start else now >= start:
-            return False
-    # 전날 시작해 자정을 넘긴 영업
-    for r in _day_ranges(hours, when.date() - timedelta(days=1)) or []:
-        start, end = _minutes(r.open_time), _minutes(r.close_time)
-        if 0 < end < start and now < end:
-            return False
-    return True
-
-
 # ── LLM 호출 ───────────────────────────────────────────────────────────
 
 
@@ -273,14 +238,9 @@ async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseMo
     # factory 의 공용 인스턴스는 그대로 두고 이 엔드포인트에서만 thinking 을 줄인다.
     llm = get_llm().model_copy(update={"thinking_budget": settings.RECOMMEND_THINKING_BUDGET})
     chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
-    gpu = get_gpu_llm()
-    gpu_chain = gpu.with_structured_output(schema, method="json_schema", include_raw=True) if gpu else None
     started = time.perf_counter()
     try:
-        result, model = await invoke_gpu_first(
-            f"{_ENDPOINT}:{stage}", prompt, gpu_chain, chain,
-            total=budget, gpu_timeout=budget - settings.RECOMMEND_GEMINI_RESERVE,
-        )
+        result = await asyncio.wait_for(chain.ainvoke(prompt), timeout=budget)
     except Exception as exc:
         log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL,
                 time.perf_counter() - started, success=False, detail=repr(exc))
@@ -289,20 +249,16 @@ async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseMo
 
     if result["parsing_error"] is not None:
         detail = str(result["parsing_error"])
-        log_llm(f"{_ENDPOINT}:{stage}", model, latency, success=False, detail=detail)
+        log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL, latency, success=False, detail=detail)
         raise LLMInvalidResponseError(detail)
 
-    log_llm(f"{_ENDPOINT}:{stage}", model, latency, success=True)
+    log_llm(f"{_ENDPOINT}:{stage}", settings.GOOGLE_MODEL, latency, success=True)
     return result["parsed"]
 
 
 async def _rerank(
     req: RecommendCoursesRequest, candidates: list[RecommendCandidate], deadline: _Deadline
 ) -> list[RecommendCandidate]:
-    opened = [c for c in candidates if not _is_closed(c.business_hours, req.datetime)]
-    if not opened:
-        return []
-
     # 조합 단계가 최소한 한 번은 돌 수 있게 그 몫을 남기고 쓴다.
     budget = min(
         settings.RECOMMEND_BUDGET_RERANK,
@@ -310,27 +266,33 @@ async def _rerank(
     )
     if budget < settings.RECOMMEND_MIN_LLM_SECONDS:
         logger.warning("%s 남은 시간 %.1fs, 재순위 생략", _ENDPOINT, deadline.left())
-        return opened
+        return candidates
 
-    started = time.perf_counter()
+    prompt = load_prompt(
+        "recommend_rerank",
+        query=req.query or "없음",
+        category=_categories(req) or "모름",
+        datetime=_visit_text(req.datetime),
+        candidates="\n".join(
+            f"- {c.place_id} | {c.place_name} | {_hours_text(c.business_hours)} | {c.summary}" for c in candidates
+        ),
+    )
     try:
-        scores = await asyncio.wait_for(
-            score_places(
-                req.query or "없음",
-                _categories(req) or "모름",
-                [(c.place_id, c.place_name, c.summary) for c in opened],
-            ),
-            timeout=budget,
-        )
+        parsed: RerankLLM = await _structured("rerank", prompt, RerankLLM, budget)
     except Exception as exc:
-        log_llm(f"{_ENDPOINT}:rerank", settings.JEV_MODEL, time.perf_counter() - started, success=False, detail=repr(exc))
         logger.warning("%s 재순위 실패, 유사도 순서로 대체: %r", _ENDPOINT, exc)
-        return opened
-    log_llm(f"{_ENDPOINT}:rerank", settings.JEV_MODEL, time.perf_counter() - started, success=True)
+        return candidates
 
-    # 빈 결과는 "영업 중이고 조건에 맞는 곳이 없다"는 판단이다. 점수가 같으면 유사도 순서를 유지한다.
-    kept = [c for c in opened if scores[c.place_id] >= settings.RECOMMEND_JEV_MIN_SCORE]
-    return sorted(kept, key=lambda c: -scores[c.place_id])
+    # 모델이 낸 id 가 후보에 실제로 있는지 확인하고, 없거나 중복된 건 버린다
+    # (IA_SRS AI-010). 빈 결과는 "영업 중이고 조건에 맞는 곳이 없다"는 판단이다.
+    by_id = {c.place_id: c for c in candidates}
+    seen: set[str] = set()
+    ranked = []
+    for pid in parsed.place_ids:
+        if pid in by_id and pid not in seen:
+            seen.add(pid)
+            ranked.append(by_id[pid])
+    return ranked
 
 
 async def _compose(
@@ -371,7 +333,7 @@ async def _compose(
             if p.place_id in by_id and p.place_id not in seen:
                 seen.add(p.place_id)
                 stay = p.stay_minutes if p.stay_minutes > 0 else cb.default_stay(req.category)
-                picks.append(cb.Pick(by_id[p.place_id], stay))
+                picks.append(cb.Pick(by_id[p.place_id], stay, p.reason))
         if picks:
             drafts.append((course.title, picks[: cb.MAX_PLACES_PER_COURSE]))
 
@@ -385,7 +347,7 @@ def _rule_based(req: RecommendCoursesRequest, ranked: list[RecommendCandidate]) 
     return [
         (
             cb.template_title(group[0].place_name, req.query, _categories(req)),
-            [cb.Pick(c, stay) for c in group],
+            [cb.Pick(c, stay, "요청 조건과 유사도가 높은 장소") for c in group],
         )
         for group in groups
     ]
