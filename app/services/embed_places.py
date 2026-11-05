@@ -29,7 +29,7 @@ def _prepare(places: list[PlaceToEmbed]) -> list[PlaceToEmbed]:
     제외된 만큼 embedded_count 가 줄어든다 — 백엔드는 요청 수와 비교해
     누락을 알 수 있다.
     """
-    latest: dict[str, PlaceToEmbed] = {}
+    latest: dict[int, PlaceToEmbed] = {}
     for place in places:
         if place.summary.strip():
             latest[place.place_id] = place

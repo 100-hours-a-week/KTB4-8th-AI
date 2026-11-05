@@ -126,7 +126,7 @@ async def _query_vec(query: str) -> list[float] | None:
     return await get_embedder().aembed_query(query) if query.strip() else None
 
 
-Similarities = dict[str, float]  # place_id → 압축 기준 벡터와의 코사인 유사도
+Similarities = dict[int, float]  # place_id → 압축 기준 벡터와의 코사인 유사도
 
 
 async def _search(
@@ -170,7 +170,7 @@ async def _compress(
         return candidates[: settings.RECOMMEND_TOP_K], {}
 
 
-def _match_score(place_ids: list[str], sims: Similarities) -> int | None:
+def _match_score(place_ids: list[int], sims: Similarities) -> int | None:
     """코스 장소들의 유사도 평균을 고정 구간으로 0~100 환산한다.
 
     유사도가 있는 장소만 평균낸다. 전부 없으면(임베딩 없음, 압축 실패 등) None —
@@ -453,7 +453,7 @@ async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
     times = await _travel_times({leg for legs in course_legs for leg in legs if leg is not None}, deadline)
 
     courses: list[Course] = []
-    seen_sets: set[frozenset[str]] = set()
+    seen_sets: set[frozenset[int]] = set()
     for (title, picks), legs in zip(ordered, course_legs):
         travel = [0 if leg is None else times[leg] for leg in legs]
         course = cb.build_course(title, picks, travel, req.datetime, _available_minutes(req))
