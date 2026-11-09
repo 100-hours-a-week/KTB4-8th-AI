@@ -48,6 +48,7 @@ from app.schemas.recommend_courses import (
     RecommendCoursesRequest,
 )
 from app.services import course_builder as cb
+from app.services.place_name import brand_name
 
 _ENDPOINT = "recommend-courses"
 
@@ -433,21 +434,13 @@ def _origin(req: RecommendCoursesRequest) -> cb.LatLng | None:
     return (req.origin.lat, req.origin.lng) if req.origin else None
 
 
-def _brand(name: str) -> str:
-    """'싱싱샐러드 일산정발산점' → '싱싱샐러드'. 띄어 쓴 마지막 말이 '~점'일 때만 뗀다."""
-    words = name.split()
-    if len(words) > 1 and words[-1].endswith("점"):
-        words = words[:-1]
-    return "".join(words)
-
-
 async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
     # 같은 place_id 가 두 번 오면 앞의 것만 쓴다.
     candidates = list({c.place_id: c for c in reversed(req.candidates)}.values())[::-1]
     # 같은 가게가 다른 place_id 로 올 때가 있다(summary 만 다르거나 지점명 표기만 다름).
     # 끝의 지점명(~점)과 공백을 뺀 이름, 좌표가 모두 같으면 앞의 것만 쓴다.
     # 좌표는 반올림돼 와서 다른 가게도 같을 수 있어 좌표만으로는 묶지 않는다.
-    candidates = list({(_brand(c.place_name), c.lat, c.lng): c for c in reversed(candidates)}.values())[::-1]
+    candidates = list({(brand_name(c.place_name), c.lat, c.lng): c for c in reversed(candidates)}.values())[::-1]
     if not candidates:
         return RecommendCoursesData(courses=[])
 

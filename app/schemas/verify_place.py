@@ -28,6 +28,9 @@ class PlaceCandidate(BaseModel):
     event_start_date : Optional[date] = Field(default = None, description = "확정된 행사 시작일 (기간 한정 행사가 아니면 null)")
     event_end_date : Optional[date] = Field(default = None, description = "확정된 행사 종료일 (기간 한정 행사가 아니면 null)")
     event_period_unresolved : bool = Field(description = "기간 한정 행사로 보이나 종료일을 끝내 확인하지 못해 사용자 확인이 필요한지 여부")
+    # 폐점으로 낼지는 analyze_video 가 정한다 — 행사는 지역 검색에 잘 안 나와서
+    # 카테고리를 봐야 하는데, 카테고리는 검증과 동시에 따로 고른다.
+    closed : bool = Field(default = False, description = "네이버 지역 검색에 이름·위치가 맞는 곳이 하나도 없음. 검색 실패면 false")
 
 
 class VerifyPlaceData(BaseModel):
