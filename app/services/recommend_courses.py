@@ -22,8 +22,9 @@ verify-place 와 같은 기준이고, API 시트에 이 엔드포인트의 502 �
 import asyncio
 import math
 import time
-from collections.abc import Awaitable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import date, datetime, timedelta
+from typing import Literal
 
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
@@ -51,6 +52,14 @@ from app.services import course_builder as cb
 from app.services.place_name import brand_name
 
 _ENDPOINT = "recommend-courses"
+
+# 스트리밍(/v3/recommend-course/stream)이 status 이벤트로 내보내는 단계. 단계를 시작할 때 알린다.
+Stage = Literal["retrieving", "reranking", "composing", "routing"]
+Report = Callable[[Stage], None]
+
+
+def _no_report(stage: Stage) -> None:
+    """스트리밍이 아닌 요청(/v1)은 단계를 알릴 곳이 없다."""
 
 # 압축 기준 벡터의 재료별 비율. 이번 대화 조건이 우선이다 — "오늘은 조용한 데"
 # 라고 했는데 평소 취향인 핫플이 앞서면 요청을 무시한 추천이 된다. 카테고리도
@@ -434,7 +443,7 @@ def _origin(req: RecommendCoursesRequest) -> cb.LatLng | None:
     return (req.origin.lat, req.origin.lng) if req.origin else None
 
 
-async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
+async def _recommend(req: RecommendCoursesRequest, report: Report) -> RecommendCoursesData:
     # 같은 place_id 가 두 번 오면 앞의 것만 쓴다.
     candidates = list({c.place_id: c for c in reversed(req.candidates)}.values())[::-1]
     # 같은 가게가 다른 place_id 로 올 때가 있다(summary 만 다르거나 지점명 표기만 다름).
@@ -445,16 +454,20 @@ async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
         return RecommendCoursesData(courses=[])
 
     deadline = _Deadline(settings.TIMEOUT_RECOMMEND_COURSES - _SAFETY_SECONDS)
+    report("retrieving")
     compressed, sims = await _compress(req, candidates, deadline)
+    report("reranking")
     ranked = await _rerank(req, compressed, deadline)
     if not ranked:
         return RecommendCoursesData(courses=[])
 
+    report("composing")
     drafts = await _compose(req, ranked, deadline)
 
     origin = _origin(req)
     ordered = [(title, cb.order_by_distance(picks, origin)) for title, picks in drafts]
     course_legs = [cb.legs(picks, origin) for _, picks in ordered]
+    report("routing")
     times = await _travel_times({leg for legs in course_legs for leg in legs if leg is not None}, deadline)
 
     courses: list[Course] = []
@@ -477,9 +490,9 @@ async def _recommend(req: RecommendCoursesRequest) -> RecommendCoursesData:
     return RecommendCoursesData(courses=courses[: cb.MAX_COURSES])
 
 
-async def recommend_courses(req: RecommendCoursesRequest) -> RecommendCoursesData:
+async def recommend_courses(req: RecommendCoursesRequest, report: Report = _no_report) -> RecommendCoursesData:
     try:
-        return await asyncio.wait_for(_recommend(req), timeout=settings.TIMEOUT_RECOMMEND_COURSES)
+        return await asyncio.wait_for(_recommend(req, report), timeout=settings.TIMEOUT_RECOMMEND_COURSES)
     except asyncio.TimeoutError as exc:
         raise LLMTimeoutError("코스 추천이 전체 제한 시간 내에 끝나지 않았습니다") from exc
     except AIServerError:
@@ -526,3 +539,38 @@ def cancel(request_id: str) -> None:
     task = _running.get(request_id)
     if task is not None and not task.done():
         task.cancel()
+
+
+# ── 스트리밍 ───────────────────────────────────────────────────────────
+
+StreamItem = tuple[Literal["status"], Stage] | tuple[Literal["result"], RecommendCoursesData | None]
+
+
+async def recommend_courses_stream(request_id: str | None, req: RecommendCoursesRequest) -> AsyncIterator[StreamItem]:
+    """단계를 시작할 때마다 ("status", 단계), 끝나면 ("result", 결과)를 내준다.
+
+    결과가 None 이면 중단 API 로 중단된 것이다. 실패하면 recommend_courses 와 같은
+    우리 예외(AIServerError)를 올린다. 시간 제한·중단은 /v1 과 같은 코드를 그대로 쓴다 —
+    작업을 따로 돌리고, 작업이 단계를 알릴 때마다 큐에서 꺼내 내보낸다.
+    """
+    stages: asyncio.Queue[Stage] = asyncio.Queue()
+    work = asyncio.create_task(run_cancellable(request_id, recommend_courses(req, stages.put_nowait)))
+    next_stage: asyncio.Task | None = None
+    try:
+        while not work.done():
+            next_stage = asyncio.create_task(stages.get())
+            await asyncio.wait({next_stage, work}, return_when=asyncio.FIRST_COMPLETED)
+            if next_stage.done():
+                yield "status", next_stage.result()
+            else:
+                next_stage.cancel()
+        # 작업이 끝나기 직전에 들어온 단계가 남아 있으면 순서대로 먼저 보낸다.
+        while not stages.empty():
+            yield "status", stages.get_nowait()
+        yield "result", work.result()  # 실패면 여기서 예외가 올라간다
+    finally:
+        # 연결이 끊겨 이 생성기가 닫히면 따로 돌던 작업도 멈춘다. 안 하면 아무도 받지 않는
+        # LLM·지도 호출이 끝까지 돈다. 정상으로 끝났을 땐 이미 끝난 작업이라 아무 일도 없다.
+        work.cancel()
+        if next_stage is not None:
+            next_stage.cancel()
