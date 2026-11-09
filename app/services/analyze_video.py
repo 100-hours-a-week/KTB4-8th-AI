@@ -222,6 +222,10 @@ async def _verify(url: str, analysis: VideoAnalysis, observations: list[str]) ->
         business_hours = _always_open()
     if business_hours is None:
         return _not_found(url)
+    # 네이버 지역 검색에 없으면 폐점이다(verify_place 가 표시). 행사(팝업·전시 등)는
+    # 지역 검색에 잘 안 나와서 폐점으로 보지 않는다.
+    if place.closed and category not in EVENT_CATEGORIES:
+        return VideoAnalysisResult(video_url=url, status="closed", place_name=place.place_name, address=place.address)
     return VideoAnalysisResult(
         video_url=url,
         status="success",
@@ -269,7 +273,7 @@ async def _finish_video(
     if failed:
         # 원인이 여럿이어도 한 항목에 하나만 담을 수 있어 처음 실패한 장소의 코드를 쓴다.
         return [_failed(url, failed[0].error)]
-    succeeded = [r for r in verified if r.status == "success"]
+    succeeded = [r for r in verified if r.status in ("success", "closed")]
     return succeeded or [_not_found(url)]
 
 

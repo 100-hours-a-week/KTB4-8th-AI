@@ -1,6 +1,7 @@
 """장소 검증 서비스 (docs/1 2-4, IA_SRS AI-004).
 
-흐름: 웹검색(고정 형식 텍스트) → 코드로 파싱 → 지도 API 로 좌표.
+흐름: 웹검색(고정 형식 텍스트) → 코드로 파싱 → 지도 API 로 좌표
+      → 네이버 지역 검색으로 지점명 확인·폐점 표시(첫 번째 후보만).
 
 검색 호출에 구조화 출력을 걸지 않는 이유: 랭체인 with_structured_output 을 걸면
 Google 검색 그라운딩이 조용히 빠진다 — 에러 없이 "성공"하지만 검색어 0개·출처
@@ -35,8 +36,9 @@ from langsmith import traceable
 
 from app.core.config import settings
 from app.core.exceptions import AIServerError, LLMInvalidResponseError
-from app.core.logging import log_llm, logger
+from app.core.logging import log_llm, logger, report_handled_error_throttled
 from app.integrations.map_client import geocode
+from app.integrations.search_client import NaverSearchError, search_local
 from app.models.factory import get_llm, to_domain_error
 from app.prompts.loader import load_prompt
 from app.schemas.business_hours import BusinessHours
@@ -48,6 +50,8 @@ from app.schemas.verify_place import (
     VerifyPlaceParsed,
     VerifyPlaceRequest,
 )
+from app.services.course_builder import distance_m
+from app.services.place_name import brand_name
 from app.services.verify_place_parser import ParseError, parse
 
 _ENDPOINT = "verify-place"
@@ -58,6 +62,9 @@ _SEARCH_ATTEMPTS = 2
 # 영업시간 데이터가 Asia/Seoul 기준이다. 서버(컨테이너)는 UTC 일 수 있어서
 # date.today() 를 쓰면 한국 자정~오전 9시에 하루 어긋난다.
 _KST = ZoneInfo("Asia/Seoul")
+# 네이버 결과가 이 거리 안이면 같은 자리로 본다. 지오코딩은 건물 주소, 네이버는 가게
+# 위치라 같은 가게도 조금 어긋날 수 있어 넉넉히 둔다(추정, 실측 전).
+_SAME_PLACE_METERS = 100
 
 
 def _or_none(value) -> str:
@@ -144,6 +151,34 @@ def _to_business_hours(hours: BusinessHoursParsed | None) -> BusinessHours | Non
     return BusinessHours(weekly_hours=hours.weekly_hours, exceptions=exceptions)
 
 
+async def _check_naver(place: PlaceCandidate) -> PlaceCandidate:
+    """네이버 지역 검색으로 지점명을 확인하고, 안 나오면 폐점으로 표시한다.
+
+    구글 검색에는 폐업한 가게의 옛 글도 나와서 Gemini 가 운영 중으로 볼 수 있다.
+    검증 상호로 검색해 결과마다 이름(지점명·공백 뺀 상호로 시작하는지)과 위치를 본다.
+    - 둘 다 맞으면 네이버 상호로 바꾼다 — 지점명 표기가 하나로 맞춰진다.
+    - 하나만 맞으면 영업 중으로 보고 검증 상호를 그대로 쓴다(영문 표기, 다른 지점 등).
+    - 하나도 안 맞으면 closed 로 표시한다.
+    - 검색이 실패하면 확인을 못 한 것이라 그대로 둔다.
+    """
+    try:
+        results = await search_local(place.place_name)
+    except NaverSearchError as exc:
+        # 네이버가 고장 나면 요청마다 같은 실패가 나서 5분에 한 번만 보고한다.
+        report_handled_error_throttled(f"{_ENDPOINT} naver_search_failed", "naver_search_error", exc)
+        return place
+    want = brand_name(place.place_name)
+    here = (place.lat, place.lng)
+    loose = False
+    for r in results:
+        name_ok = "".join(r.name.split()).startswith(want)
+        near = distance_m(here, (r.lat, r.lng)) <= _SAME_PLACE_METERS
+        if name_ok and near:
+            return place.model_copy(update={"place_name": r.name})
+        loose = loose or name_ok or near
+    return place if loose else place.model_copy(update={"closed": True})
+
+
 async def _verify(req: VerifyPlaceRequest) -> VerifyPlaceData:
     grounded = await _search_and_parse(req)
 
@@ -187,6 +222,8 @@ async def _verify(req: VerifyPlaceRequest) -> VerifyPlaceData:
         )
         return VerifyPlaceData(exists=False, candidates=[])
 
+    # 영상 분석은 첫 번째 후보만 쓴다 — 나머지까지 검색하지 않는다.
+    candidates[0] = await _check_naver(candidates[0])
     return VerifyPlaceData(exists=True, candidates=candidates)
 
 
