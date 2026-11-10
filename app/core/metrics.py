@@ -25,6 +25,7 @@ GENERATION_ROUTES = frozenset(
         "/v1/extract",
         "/v1/recommend-courses",
         "/v3/recommend-course/stream",
+        "/v3/extract/stream",
     }
 )
 # 인프라 헬스체크는 요청량·오류율에 섞지 않는다.
