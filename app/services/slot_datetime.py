@@ -83,6 +83,24 @@ def resolve_visit(
     return datetime.combine(day, said or time(0, 0)), False
 
 
+def this_week_status(today: date) -> str:
+    """프롬프트용. "이번 주 X"가 지났는지 모델이 계산하지 않도록 요일마다 상태(지남·오늘·가능)를 준다.
+
+    스트림은 문구가 슬롯보다 먼저 나가 코드가 문구를 바꿀 수 없어서, 모델이 이 표를 보고 "지났어요"라고
+    말한다. 지났는지는 코드 판단(_resolve_date)을 그대로 써서 표와 날짜 계산이 항상 같다.
+    11/10 Gemma 실측: 직접 계산하면 일요일 기준 "이번 주 금요일"을 안 지났다고 함(4/4), 지난 요일 목록만
+    주면 오늘 요일을 지났다고 하고 "이번 주말"을 토와 잇지 못함 — 그래서 오늘과 주말을 줄로 따로 쓴다.
+    """
+
+    def state(d: str) -> str:
+        if WEEKDAYS.index(d) == today.weekday():
+            return "오늘"
+        return "지남" if _resolve_date(SlotsLLM(weekday=d, week="이번 주"), today)[1] else "가능"
+
+    lines = [f"{d}: {state(d)}" for d in WEEKDAYS]
+    return "\n".join(lines + [f"이번 주말(토): {state('토')}"])
+
+
 def with_weekday(value: date | datetime) -> str:
     """프롬프트용. 모델이 요일을 계산하지 않도록 날짜 옆에 붙여 준다."""
     text = f"{value:%Y-%m-%d %H:%M}" if isinstance(value, datetime) else f"{value:%Y-%m-%d}"

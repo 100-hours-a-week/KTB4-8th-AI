@@ -1,5 +1,7 @@
 import asyncio
 import time
+from collections.abc import AsyncIterator
+from contextlib import aclosing
 from functools import lru_cache
 
 import httpx
@@ -137,6 +139,81 @@ async def invoke_gpu_first(
         # answered=none 이면 Gemini 까지 실패한 것이다(예외는 호출하는 쪽이 처리한다).
         log = logger.info if answered == "gpu" else logger.warning
         log("gpu_route label=%s answered=%s gpu_outcome=%s gpu_latency=%.2fs total_latency=%.2fs",
+            label, answered, gpu_outcome, gpu_latency, time.monotonic() - started)
+
+
+def _chunk_text(chunk) -> str:
+    return chunk.text or ""
+
+
+async def astream_gpu_first(
+    label: str, prompt, gpu: Runnable | None, gemini: Runnable, total: float, gpu_first_timeout: float
+) -> AsyncIterator[str]:
+    """invoke_gpu_first 의 스트리밍판. 모델이 만드는 글자를 생기는 대로 내준다.
+
+    GPU 의 첫 글자가 gpu_first_timeout 안에 오지 않거나 그 전에 실패하면 Gemini 로 넘어간다.
+    첫 글자를 내준 뒤에는 넘어가지 않는다 — 이미 보낸 글자를 되돌릴 수 없어서다(11/10 결정 3a).
+    그 뒤의 실패·시간 초과는 그대로 올린다. 전체 제한은 total 초.
+    gpu_route 로그 한 줄은 invoke_gpu_first 와 같은 모양으로 남긴다.
+    """
+    started = time.monotonic()
+    deadline = started + total
+    gpu_outcome, gpu_latency, answered = "skipped", 0.0, "none"
+
+    def left() -> float:
+        return deadline - time.monotonic()
+
+    async def first_text(stream: AsyncIterator, timeout: float) -> str | None:
+        """빈 조각(역할만 담긴 첫 조각 등)을 건너뛰고 첫 글자를 기다린다. 끝까지 없으면 None."""
+        end = time.monotonic() + timeout
+        while True:
+            try:
+                chunk = await asyncio.wait_for(anext(stream), timeout=end - time.monotonic())
+            except StopAsyncIteration:
+                return None
+            text = _chunk_text(chunk)
+            if text:
+                return text
+
+    async def rest(stream: AsyncIterator) -> AsyncIterator[str]:
+        while True:
+            try:
+                chunk = await asyncio.wait_for(anext(stream), timeout=left())
+            except StopAsyncIteration:
+                return
+            text = _chunk_text(chunk)
+            if text:
+                yield text
+
+    try:
+        if gpu is not None and gpu_first_timeout > 0:
+            async with aclosing(gpu.astream(prompt)) as stream:
+                try:
+                    first = await first_text(stream, min(gpu_first_timeout, left()))
+                except Exception as exc:
+                    first = None
+                    gpu_latency = time.monotonic() - started
+                    if isinstance(exc, TimeoutError):
+                        gpu_outcome = "timeout"
+                    else:
+                        gpu_outcome = "error"
+                        report_handled_error_throttled(label, "gpu_error", exc)
+                if first is not None:
+                    gpu_outcome, gpu_latency, answered = "success", time.monotonic() - started, "gpu"
+                    yield first
+                    async for text in rest(stream):
+                        yield text
+                    return
+        async with aclosing(gemini.astream(prompt)) as stream:
+            first = await first_text(stream, left())
+            answered = "gemini"
+            if first is not None:
+                yield first
+                async for text in rest(stream):
+                    yield text
+    finally:
+        log = logger.info if answered == "gpu" else logger.warning
+        log("gpu_route label=%s answered=%s gpu_outcome=%s gpu_latency=%.2fs total_latency=%.2fs stream=true",
             label, answered, gpu_outcome, gpu_latency, time.monotonic() - started)
 
 
