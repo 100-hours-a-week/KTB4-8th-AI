@@ -66,11 +66,18 @@ def delete_places(place_ids: list[int]) -> int:
 
 def get_embeddings(place_ids: list[int]) -> list[list[float]]:
     """저장된 장소 벡터를 꺼낸다. 없는 id 는 조용히 빠진다(취향 벡터 계산용)."""
+    return list(get_embeddings_by_id(place_ids).values())
+
+
+def get_embeddings_by_id(place_ids: list[int]) -> dict[int, list[float]]:
+    """Chroma 반환 순서와 누락 여부에 관계없이 장소 ID 에 벡터를 연결한다."""
     if not place_ids:
-        return []
-    result = _collection().get(ids=[str(pid) for pid in place_ids], include=["embeddings"])
+        return {}
+    result = _collection().get(ids=list(dict.fromkeys(str(pid) for pid in place_ids)), include=["embeddings"])
     embeddings = result.get("embeddings")
-    return [list(v) for v in embeddings] if embeddings is not None else []
+    if embeddings is None:
+        return {}
+    return {int(pid): list(v) for pid, v in zip(result["ids"], embeddings)}
 
 
 def search_places(query_vector: list[float], place_ids: list[int], n_results: int) -> list[tuple[int, float]]:

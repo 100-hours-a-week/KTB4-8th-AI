@@ -3,7 +3,7 @@
 흐름: 후보 압축(취향 벡터 + 벡터 검색) → 영업 필터(코드) → 재순위(Jev) → 코스 조합(LLM)
       → 방문 순서·이동시간·도착 시각 계산 → 외출 가능 시간 검증(코드).
 
-챗봇 화면의 동기 경로라 전체 15초 deadline 안에서 구간마다 예산을 두고
+챗봇 화면의 경로라 설정된 전체 deadline 안에서 구간마다 예산을 두고
 (docs/6 5-3), 예산을 넘기거나 실패한 구간은 LLM 을 쓰지 않는 폴백으로 넘긴다
 (docs/6 5-6):
   - 후보 압축 실패 → 백엔드가 준 순서 그대로
@@ -15,14 +15,16 @@ verify-place 와 같은 기준이고, API 시트에 이 엔드포인트의 502 �
 재순위 전 영업 판단은 코드가 한다(_is_closed). 조합 프롬프트에는 사람이 읽는 문장으로
 바꿔 넣는다(_hours_text).
 
-코스 추천도(match_score)는 후보 압축 때 Chroma 가 준 유사도로 계산한다. 압축에
-쓴 벡터(query + 카테고리 + 취향)와 같은 기준이라 코스 순서와 점수가 어긋나지 않는다.
+재순위는 Jev 조건 평가와 별도로 보존한 취향 유사도를 결합한다. 결합 점수를 조합
+프롬프트에도 전달하고, 최종 코스 추천도(match_score)는 남은 장소들의 결합 점수 평균이다.
+Jev 실패 시에는 취향이 이미 포함된 검색 점수만 쓰며, 취향을 다시 더하지 않는다.
 """
 
 import asyncio
 import math
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Literal
 
@@ -36,7 +38,7 @@ from app.integrations.jev_client import score_places
 from app.integrations.map_client import driving_minutes
 from app.models.factory import get_gpu_llm, get_llm, invoke_gpu_first, to_domain_error
 from app.prompts.loader import load_prompt
-from app.retrieval.chroma_store import get_embeddings, search_places
+from app.retrieval.chroma_store import get_embeddings, get_embeddings_by_id, search_places
 from app.retrieval.embedder import get_embedder
 from app.schemas.business_hours import BusinessHours
 from app.schemas.category import CATEGORY_DESCRIPTIONS
@@ -136,12 +138,42 @@ async def _query_vec(query: str) -> list[float] | None:
     return await get_embedder().aembed_query(query) if query.strip() else None
 
 
-Similarities = dict[int, float]  # place_id → 압축 기준 벡터와의 코사인 유사도
+def _similarity_score(similarity: float | None) -> float | None:
+    """기존 고정 구간으로 유사도를 0~1 에 맞춘다. 확률 보정은 아니다."""
+    if similarity is None or not math.isfinite(similarity):
+        return None
+    lo, hi = settings.RECOMMEND_SCORE_SIM_MIN, settings.RECOMMEND_SCORE_SIM_MAX
+    if hi <= lo:
+        return None
+    return min(1.0, max(0.0, (similarity - lo) / (hi - lo)))
+
+
+def _cosine(a: list[float], b: list[float]) -> float | None:
+    if not a or len(a) != len(b):
+        return None
+    norm = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(x * x for x in b))
+    if not norm or not math.isfinite(norm):
+        return None
+    value = sum(x * y for x, y in zip(a, b)) / norm
+    return min(1.0, max(-1.0, value)) if math.isfinite(value) else None
+
+
+@dataclass
+class PlaceScores:
+    """단계별 평가를 보존한다. 계산하지 못한 값은 0점과 구분한다."""
+
+    search_similarity: float | None = None
+    taste: float | None = None  # 저장 이력만의 유사도를 0~1로 환산한 값
+    condition: float | None = None  # Jev noul. 검색 점수와 섞어 조건을 중복 반영하지 않는다.
+    combined: float | None = None
+
+
+Scores = dict[int, PlaceScores]
 
 
 async def _search(
     req: RecommendCoursesRequest, candidates: list[RecommendCandidate]
-) -> tuple[list[RecommendCandidate], Similarities]:
+) -> tuple[list[RecommendCandidate], Scores]:
     # 취향 벡터는 저장하지 않고 매번 계산한다 — 장소를 지우면 다음 추천에 바로
     # 반영된다(docs/5 3-3). 이력이 아직 임베딩되지 않았으면 조용히 빠진다.
     history_ids = [h.place_id for h in req.history_place_ids]
@@ -163,15 +195,31 @@ async def _search(
     ranked = [by_id[pid] for pid in sims]
 
     # 아직 임베딩되지 않은 후보(저장 직후 등)는 검색에 안 잡힌다. 버리지 않고
-    # 뒤에 붙여 LLM 이 판단하게 한다 — 남는 자리가 있을 때만. 이 후보들은
-    # 유사도가 없어서 추천도 계산에서 빠진다.
+    # 뒤에 붙여 LLM 이 판단하게 한다 — 남는 자리가 있을 때만. 검색 유사도와
+    # 취향은 미상이지만, Jev 평가가 성공하면 조건 평가로 추천도를 계산할 수 있다.
     missing = [c for c in candidates if c.place_id not in sims]
-    return (ranked + missing)[: settings.RECOMMEND_TOP_K], sims
+    compressed = (ranked + missing)[: settings.RECOMMEND_TOP_K]
+    scores = {
+        c.place_id: PlaceScores(
+            search_similarity=sims.get(c.place_id), combined=_similarity_score(sims.get(c.place_id))
+        )
+        for c in compressed
+    }
+    if taste_vec is not None:
+        try:
+            embeddings = await asyncio.to_thread(get_embeddings_by_id, [c.place_id for c in compressed])
+            for pid, vector in embeddings.items():
+                if pid in scores:
+                    scores[pid].taste = _similarity_score(_cosine(taste_vec, vector))
+        except Exception as exc:
+            # 개인화 부가 조회만 실패했으면 이미 구한 검색 결과는 유지한다.
+            logger.warning("%s 취향 점수 조회 실패, 검색 결과 유지: %r", _ENDPOINT, exc)
+    return compressed, scores
 
 
 async def _compress(
     req: RecommendCoursesRequest, candidates: list[RecommendCandidate], deadline: _Deadline
-) -> tuple[list[RecommendCandidate], Similarities]:
+) -> tuple[list[RecommendCandidate], Scores]:
     budget = min(settings.RECOMMEND_BUDGET_RETRIEVAL, deadline.left())
     try:
         return await asyncio.wait_for(_search(req, candidates), timeout=budget)
@@ -180,18 +228,15 @@ async def _compress(
         return candidates[: settings.RECOMMEND_TOP_K], {}
 
 
-def _match_score(place_ids: list[int], sims: Similarities) -> int | None:
-    """코스 장소들의 유사도 평균을 고정 구간으로 0~100 환산한다.
-
-    유사도가 있는 장소만 평균낸다. 전부 없으면(임베딩 없음, 압축 실패 등) None —
-    0 을 내면 "안 맞음"으로 읽혀 데이터가 없는 경우와 구분되지 않는다.
-    """
-    values = [sims[pid] for pid in place_ids if pid in sims]
+def _match_score(place_ids: list[int], scores: Scores) -> int | None:
+    """최종 코스에 남은 장소들의 결합 점수 평균(0~100). 만족 확률이 아니다."""
+    values = [
+        scores[pid].combined for pid in place_ids
+        if pid in scores and scores[pid].combined is not None
+    ]
     if not values:
         return None
-    lo, hi = settings.RECOMMEND_SCORE_SIM_MIN, settings.RECOMMEND_SCORE_SIM_MAX
-    ratio = (sum(values) / len(values) - lo) / (hi - lo)
-    return round(min(1.0, max(0.0, ratio)) * 100)
+    return round(sum(values) / len(values) * 100)
 
 
 _WEEKDAYS = [("MONDAY", "월"), ("TUESDAY", "화"), ("WEDNESDAY", "수"), ("THURSDAY", "목"),
@@ -307,7 +352,8 @@ async def _structured(stage: str, prompt: list[BaseMessage], schema: type[BaseMo
 
 
 async def _rerank(
-    req: RecommendCoursesRequest, candidates: list[RecommendCandidate], deadline: _Deadline
+    req: RecommendCoursesRequest, candidates: list[RecommendCandidate], deadline: _Deadline,
+    scores: Scores | None = None,
 ) -> list[RecommendCandidate]:
     opened = [c for c in candidates if not _is_closed(c.business_hours, req.datetime)]
     if not opened:
@@ -324,7 +370,7 @@ async def _rerank(
 
     started = time.perf_counter()
     try:
-        scores = await asyncio.wait_for(
+        condition_scores = await asyncio.wait_for(
             score_places(
                 req.query or "없음",
                 _categories(req) or "모름",
@@ -332,19 +378,37 @@ async def _rerank(
             ),
             timeout=budget,
         )
+        if any(
+            not isinstance(condition_scores.get(c.place_id), (int, float))
+            or not math.isfinite(condition_scores[c.place_id])
+            or not 0 <= condition_scores[c.place_id] <= 1
+            for c in opened
+        ):
+            raise ValueError("Jev 조건 평가가 누락되었거나 0~1 범위 밖입니다")
     except Exception as exc:
         log_llm(f"{_ENDPOINT}:rerank", settings.JEV_MODEL, time.perf_counter() - started, success=False, detail=repr(exc))
         logger.warning("%s 재순위 실패, 유사도 순서로 대체: %r", _ENDPOINT, exc)
         return opened
     log_llm(f"{_ENDPOINT}:rerank", settings.JEV_MODEL, time.perf_counter() - started, success=True)
 
-    # 빈 결과는 "영업 중이고 조건에 맞는 곳이 없다"는 판단이다. 점수가 같으면 유사도 순서를 유지한다.
-    kept = [c for c in opened if scores[c.place_id] >= settings.RECOMMEND_JEV_MIN_SCORE]
-    return sorted(kept, key=lambda c: -scores[c.place_id])
+    scores = scores if scores is not None else {}
+    for c in opened:
+        item = scores.setdefault(c.place_id, PlaceScores())
+        item.condition = condition_scores[c.place_id]
+        weight = settings.RECOMMEND_TASTE_WEIGHT if item.taste is not None else 0.0
+        item.combined = (
+            (1.0 - weight) * item.condition
+            + weight * (item.taste if item.taste is not None else 0.0)
+        )
+
+    # 조건 미달 여부는 결합 전 Jev 값으로 판단한다. 취향에 맞아도 미달 후보는 살리지 않는다.
+    kept = [c for c in opened if condition_scores[c.place_id] >= settings.RECOMMEND_JEV_MIN_SCORE]
+    return sorted(kept, key=lambda c: -scores[c.place_id].combined)
 
 
 async def _compose(
-    req: RecommendCoursesRequest, ranked: list[RecommendCandidate], deadline: _Deadline
+    req: RecommendCoursesRequest, ranked: list[RecommendCandidate], deadline: _Deadline,
+    scores: Scores | None = None,
 ) -> list[tuple[str, list[cb.Pick]]]:
     budget = deadline.left() - _MAP_RESERVE_SECONDS
     if budget < settings.RECOMMEND_MIN_LLM_SECONDS:
@@ -362,6 +426,7 @@ async def _compose(
         max_places=cb.MAX_PLACES_PER_COURSE,
         candidates="\n".join(
             f"- {c.place_id} | {c.place_name} | {_hours_text(c.business_hours)} | {c.summary} | ({c.lat:.5f}, {c.lng:.5f})"
+            f" | {_scores_text((scores or {}).get(c.place_id))}"
             for c in ranked
         ),
     )
@@ -387,6 +452,14 @@ async def _compose(
 
     # 모델이 유효한 장소를 하나도 못 냈으면 조합이 실패한 것이다.
     return drafts or _rule_based(req, ranked)
+
+
+def _scores_text(scores: PlaceScores | None) -> str:
+    def number(value: float | None) -> str:
+        return "모름" if value is None else f"{value:.3f}"
+
+    item = scores or PlaceScores()
+    return f"조건평가={number(item.condition)}, 취향점수={number(item.taste)}, 종합점수={number(item.combined)}"
 
 
 def _rule_based(req: RecommendCoursesRequest, ranked: list[RecommendCandidate]) -> list[tuple[str, list[cb.Pick]]]:
@@ -443,6 +516,53 @@ def _origin(req: RecommendCoursesRequest) -> cb.LatLng | None:
     return (req.origin.lat, req.origin.lng) if req.origin else None
 
 
+def _arrivals(course: Course, visit: datetime) -> list[datetime]:
+    """코스 장소별 도착 일시. 자정을 넘기면 다음 날로 센다."""
+    out, day, last = [], visit.date(), visit.hour * 60 + visit.minute
+    for p in course.places:
+        h, m = map(int, p.arrival_time.split(":"))
+        if h * 60 + m < last:
+            day += timedelta(days=1)
+        last = h * 60 + m
+        out.append(datetime.combine(day, datetime.min.time()).replace(hour=h, minute=m))
+    return out
+
+
+def _build_open(
+    title: str,
+    picks: list[cb.Pick],
+    origin: cb.LatLng | None,
+    times: dict[tuple[cb.LatLng, cb.LatLng], int],
+    req: RecommendCoursesRequest,
+) -> Course | None:
+    """코스를 만들고, 도착 시각에 닫혀 있는 장소를 뺀다(11/10, RAG 개선 #4).
+
+    영업 필터(_rerank)는 출발 시각만 본다. 코스 뒤쪽 장소는 도착할 때 닫혀 있을 수 있어서 여기서 다시 본다.
+    빼면 도착 시각이 바뀌므로 닫힌 곳이 없어질 때까지 반복한다. 새로 생긴 구간은 지도 API 를 다시 부르지
+    않고 추정치를 쓴다(15초 안에 다시 부를 시간이 없다). 2곳 이상이던 코스가 1곳 이하로 줄면 코스로 보지
+    않는다. 방문 시각을 모르면(00:00) 도착 시각도 추정이라 보지 않는다.
+    """
+    dropped = False
+    while picks:
+        legs = cb.legs(picks, origin)
+        travel = [0 if leg is None else times.get(leg) or cb.estimate_minutes(*leg) for leg in legs]
+        course = cb.build_course(title, picks, travel, req.datetime, _available_minutes(req))
+        if course is None or req.datetime is None or not has_visit_time(req.datetime):
+            return course
+        hours = {p.candidate.place_id: p.candidate.business_hours for p in picks}
+        closed = {
+            place.place_id
+            for place, at in zip(course.places, _arrivals(course, req.datetime))
+            if _is_closed(hours[place.place_id], at)
+        }
+        if not closed:
+            return None if dropped and len(course.places) < 2 else course
+        logger.info("%s 도착 때 닫힌 장소 %d곳 제외: %s", _ENDPOINT, len(closed), sorted(closed))
+        picks = [p for p in picks if p.candidate.place_id not in closed]
+        dropped = True
+    return None
+
+
 async def _recommend(req: RecommendCoursesRequest, report: Report) -> RecommendCoursesData:
     # 같은 place_id 가 두 번 오면 앞의 것만 쓴다.
     candidates = list({c.place_id: c for c in reversed(req.candidates)}.values())[::-1]
@@ -455,14 +575,14 @@ async def _recommend(req: RecommendCoursesRequest, report: Report) -> RecommendC
 
     deadline = _Deadline(settings.TIMEOUT_RECOMMEND_COURSES - _SAFETY_SECONDS)
     report("retrieving")
-    compressed, sims = await _compress(req, candidates, deadline)
+    compressed, scores = await _compress(req, candidates, deadline)
     report("reranking")
-    ranked = await _rerank(req, compressed, deadline)
+    ranked = await _rerank(req, compressed, deadline, scores)
     if not ranked:
         return RecommendCoursesData(courses=[])
 
     report("composing")
-    drafts = await _compose(req, ranked, deadline)
+    drafts = await _compose(req, ranked, deadline, scores)
 
     origin = _origin(req)
     ordered = [(title, cb.order_by_distance(picks, origin)) for title, picks in drafts]
@@ -472,9 +592,12 @@ async def _recommend(req: RecommendCoursesRequest, report: Report) -> RecommendC
 
     courses: list[Course] = []
     seen_sets: set[frozenset[int]] = set()
-    for (title, picks), legs in zip(ordered, course_legs):
-        travel = [0 if leg is None else times[leg] for leg in legs]
-        course = cb.build_course(title, picks, travel, req.datetime, _available_minutes(req))
+    built = [_build_open(title, picks, origin, times, req) for title, picks in ordered]
+    if drafts and not any(built):
+        # 도착 때 닫힌 곳을 빼다 보니 코스가 하나도 남지 않았다. 지도 API 를 다시 부를 시간은
+        # 없어서 규칙 기반 조합을 추정 이동 시간으로 만든다.
+        built = [_build_open(t, cb.order_by_distance(p, origin), origin, times, req) for t, p in _rule_based(req, ranked)]
+    for course in built:
         if course is None:
             continue
         # 시간 초과로 뒤를 잘라내다 보면 코스끼리 같아질 수 있고, 후보가 적으면
@@ -484,9 +607,14 @@ async def _recommend(req: RecommendCoursesRequest, report: Report) -> RecommendC
         if any(key <= seen for seen in seen_sets):
             continue
         seen_sets.add(key)
-        course.match_score = _match_score([p.place_id for p in course.places], sims)
+        course.match_score = _match_score([p.place_id for p in course.places], scores)
         courses.append(course)
 
+    # 모델 출력 순서 대신, 최종적으로 남은 장소들의 같은 평가 기준으로 코스를 정렬한다.
+    courses.sort(
+        key=lambda c: (c.match_score is not None, c.match_score if c.match_score is not None else 0),
+        reverse=True,
+    )
     return RecommendCoursesData(courses=courses[: cb.MAX_COURSES])
 
 

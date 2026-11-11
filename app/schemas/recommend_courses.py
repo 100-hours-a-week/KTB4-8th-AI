@@ -59,12 +59,11 @@ class CoursePlace(BaseModel):
 class Course(BaseModel):
     """코스 모델"""
     title: str = Field(..., description="코스 제목 (LLM 생성)")
-    # 확률이 아니다 — 유사도를 고정 구간으로 환산한 점수. 이름을 rate 가 아니라
-    # score 로 둔 것도 그래서다. 계산할 수 없으면 0 이 아니라 null: 0 은 "안
-    # 맞음"이라는 주장이라, 임베딩이 없어서 모르는 경우와 구분되지 않는다.
+    # 확률이 아니다 — 장소별 조건 평가·취향 결합 점수의 평균이다. Jev 실패 때는
+    # 검색 유사도 환산값을 쓴다. 어느 점수도 구할 수 없으면 0 이 아니라 null 이다.
     match_score: Optional[int] = Field(
         default=None, ge=0, le=100,
-        description="코스 추천도(0~100). 요청 조건+취향과의 유사도. 계산할 수 없으면 null",
+        description="코스 추천도(0~100). 장소별 조건 적합도·취향 결합 점수의 평균. 평가 실패 시 검색 점수로 대체하며 계산할 수 없으면 null",
     )
     places: list[CoursePlace] = Field(..., description="장소 목록. 방문 순서대로 정렬됨")
     total_duration_minutes: int = Field(..., description="이동+체류를 합한 총 소요 시간(분)")
