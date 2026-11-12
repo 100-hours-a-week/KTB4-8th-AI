@@ -118,6 +118,9 @@ class Settings(BaseSettings):
     # 임베디드 Chroma 의 저장 디렉터리. MySQL 에서 파생된 인덱스라 원본이
     # 아니며, 유실되어도 재생성할 수 있다(docs/3). .gitignore 대상.
     CHROMA_PATH: str = "./chroma"
+    # 값이 있으면 임베디드 대신 Chroma 서버에 붙는다(멀티 인스턴스용). 비우면 CHROMA_PATH 를 쓴다.
+    CHROMA_HOST: str | None = None
+    CHROMA_PORT: int = 8000
 
     # 에러 수집(Sentry). 비어 있으면 Sentry 를 켜지 않는다 — 로컬·테스트에서는
     # 안 보내도 되고, 운영에서는 인프라가 환경변수로 주입한다.

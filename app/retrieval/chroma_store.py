@@ -20,7 +20,10 @@ _COLLECTION = "places"
 
 @lru_cache(maxsize=1)
 def _collection() -> Collection:
-    client = chromadb.PersistentClient(path=settings.CHROMA_PATH)
+    if settings.CHROMA_HOST:
+        client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
+    else:
+        client = chromadb.PersistentClient(path=settings.CHROMA_PATH)
     # 텍스트 임베딩은 방향이 의미를 담으므로 코사인 거리를 쓴다(기본값은 l2).
     # 컬렉션을 처음 만들 때만 적용된다 — 이미 있으면 기존 설정을 따른다.
     return client.get_or_create_collection(
