@@ -29,7 +29,7 @@ def _collection() -> Collection:
 
 
 def upsert_places(
-    ids: list[str],
+    ids: list[int],
     embeddings: list[list[float]],
     summaries: list[str],
     place_names: list[str],
@@ -39,39 +39,41 @@ def upsert_places(
     place_id 가 id 와 metadata 에 둘 다 들어가는 건 의도다 — id 는 upsert
     키, metadata 는 recommend-courses 가 where 필터로 후보를 좁힐 때 쓴다.
     """
+    # Chroma id 는 문자열만 받는다. API 는 숫자, 저장은 문자열이다.
+    str_ids = [str(pid) for pid in ids]
     _collection().upsert(
-        ids=ids,
+        ids=str_ids,
         embeddings=embeddings,
         documents=summaries,
         metadatas=[
-            {"place_id": pid, "place_name": name} for pid, name in zip(ids, place_names)
+            {"place_id": pid, "place_name": name} for pid, name in zip(str_ids, place_names)
         ],
     )
 
 
-def delete_places(place_ids: list[str]) -> int:
+def delete_places(place_ids: list[int]) -> int:
     """있는 id 만 지우고, 실제로 지운 수를 돌려준다.
 
     Chroma 의 delete 는 지운 개수를 돌려주지 않고 없는 id 도 에러 없이 넘어간다.
     그래서 get 으로 실제 있는 id 를 먼저 확인하고 그것만 지운다. 조회와 삭제
     사이에 다른 요청이 같은 id 를 지우면 개수가 1~2개 어긋날 수 있다(드묾).
     """
-    found = _collection().get(ids=place_ids, include=[])["ids"]
+    found = _collection().get(ids=[str(pid) for pid in place_ids], include=[])["ids"]
     if found:
         _collection().delete(ids=found)
     return len(found)
 
 
-def get_embeddings(place_ids: list[str]) -> list[list[float]]:
+def get_embeddings(place_ids: list[int]) -> list[list[float]]:
     """저장된 장소 벡터를 꺼낸다. 없는 id 는 조용히 빠진다(취향 벡터 계산용)."""
     if not place_ids:
         return []
-    result = _collection().get(ids=place_ids, include=["embeddings"])
+    result = _collection().get(ids=[str(pid) for pid in place_ids], include=["embeddings"])
     embeddings = result.get("embeddings")
     return [list(v) for v in embeddings] if embeddings is not None else []
 
 
-def search_places(query_vector: list[float], place_ids: list[str], n_results: int) -> list[tuple[str, float]]:
+def search_places(query_vector: list[float], place_ids: list[int], n_results: int) -> list[tuple[int, float]]:
     """place_ids 범위 안에서 query_vector 와 가까운 순으로 (place_id, 유사도) 를 돌려준다.
 
     범위를 백엔드가 준 후보로 한정하므로, 삭제된 장소의 벡터가 남아 있어도
@@ -82,11 +84,11 @@ def search_places(query_vector: list[float], place_ids: list[str], n_results: in
         return []
     result = _collection().query(
         query_embeddings=[query_vector],
-        where={"place_id": {"$in": place_ids}},
+        where={"place_id": {"$in": [str(pid) for pid in place_ids]}},
         n_results=n_results,
         include=["distances"],
     )
     if not result["ids"]:
         return []
-    return [(pid, 1.0 - dist) for pid, dist in zip(result["ids"][0], result["distances"][0])]
+    return [(int(pid), 1.0 - dist) for pid, dist in zip(result["ids"][0], result["distances"][0])]
 

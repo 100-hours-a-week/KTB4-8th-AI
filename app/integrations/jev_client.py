@@ -61,13 +61,13 @@ async def classify_category(place_name: str, observations: list[str]) -> PlaceCa
 
 
 @traceable(name="jev-rerank", run_type="tool")
-async def score_places(query: str, category: str, places: list[tuple[str, str, str]]) -> dict[str, float]:
+async def score_places(query: str, category: str, places: list[tuple[int, str, str]]) -> dict[int, float]:
     """(place_id, 장소명, 요약) 후보마다 요청에 맞을 확률을 받는다. 한 요청으로 보낸다 — 공유 state 는 한 번만 과금된다."""
     body = {
         "state": f"정성 조건: {query}\n카테고리: {category}",
         "model": settings.JEV_MODEL,
         "questions": {
-            place_id: {
+            str(place_id): {
                 "type": "noul",
                 "instructions": jev_rerank.INSTRUCTIONS.format(place_name=name, summary=summary),
                 "criteria": jev_rerank.CRITERIA,
@@ -75,4 +75,4 @@ async def score_places(query: str, category: str, places: list[tuple[str, str, s
             for place_id, name, summary in places
         },
     }
-    return await _ask(body, lambda answers: {place_id: answers[place_id]["noul"] for place_id, _, _ in places})
+    return await _ask(body, lambda answers: {place_id: answers[str(place_id)]["noul"] for place_id, _, _ in places})

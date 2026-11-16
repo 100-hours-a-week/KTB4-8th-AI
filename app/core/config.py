@@ -108,6 +108,13 @@ class Settings(BaseSettings):
     NAVER_MAP_BASE_URL: str = "https://maps.apigw.ntruss.com"
     TIMEOUT_MAP_API: int = 5  # docs/6 5-2 — 단순 조회라 이보다 길면 벤더 이상
 
+    # 폐점 확인용 네이버 지역 검색 — NAVER API HUB(지도 키와 다른 Application).
+    # Maps 에는 상호로 찾는 API 가 없어(Geocoding 은 주소만) 따로 쓴다.
+    NAVER_SEARCH_CLIENT_ID: str | None = None
+    NAVER_SEARCH_CLIENT_SECRET: str | None = None
+    NAVER_SEARCH_BASE_URL: str = "https://naverapihub.apigw.ntruss.com"
+    TIMEOUT_NAVER_SEARCH: float = 3.0
+
     # 임베디드 Chroma 의 저장 디렉터리. MySQL 에서 파생된 인덱스라 원본이
     # 아니며, 유실되어도 재생성할 수 있다(docs/3). .gitignore 대상.
     CHROMA_PATH: str = "./chroma"

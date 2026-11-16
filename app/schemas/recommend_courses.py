@@ -17,7 +17,7 @@ Query = Annotated[str, BeforeValidator(lambda v: "" if v is None else v)]
 
 class RecommendCandidate(BaseModel):
     """추천 후보 장소 모델"""
-    place_id: str = Field(..., description="장소 식별자")
+    place_id: int = Field(..., description="장소 식별자")
     place_name: str = Field(..., description="장소명")
     summary: str = Field(..., description="장소 특징 요약")
     lat: float = Field(..., description="위도")
@@ -29,7 +29,7 @@ class RecommendCandidate(BaseModel):
 
 class HistoryPlace(BaseModel):
     """과거 저장 장소 (취향 벡터 계산용)"""
-    place_id: str = Field(..., description="장소 식별자")
+    place_id: int = Field(..., description="장소 식별자")
     saved_at: date = Field(..., description="저장 일자")
 
 
@@ -48,7 +48,7 @@ class RecommendCoursesRequest(BaseModel):
 #응답 스키마
 class CoursePlace(BaseModel):
     """코스에 포함된 장소. 리스트 순서가 곧 방문 순서"""
-    place_id: str = Field(..., description="장소 식별자")
+    place_id: int = Field(..., description="장소 식별자")
     place_name: str = Field(..., description="장소명")
     travel_minutes: int = Field(..., description="직전 지점에서의 이동 시간(분)")
     arrival_time: str = Field(..., description="도착 예정 시각 (HH:MM)")
@@ -83,7 +83,7 @@ RecommendCoursesResponse = APIResponse[RecommendCoursesData]
 # LLM 전용. 이동시간·도착 시각·총 소요 시간은 모델이 아니라 코드가 채운다 —
 # 모델이 적은 분 단위 숫자는 그럴듯하게 지어낸 값이라 믿을 수 없다.
 class DraftPlace(BaseModel):
-    place_id: str = Field(description="장소 식별자 (후보 목록에 있는 값만)")
+    place_id: int = Field(description="장소 식별자 (후보 목록에 있는 값만)")
     stay_minutes: int = Field(description="예상 체류 시간(분)")
 
 

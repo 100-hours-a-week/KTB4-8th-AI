@@ -5,7 +5,7 @@ from app.schemas.common import APIResponse
 
 #요청 스키마
 class PlaceToEmbed(BaseModel):
-    place_id : str = Field(description = "장소 식별자 (백엔드 DB의 PK)")
+    place_id : int = Field(description = "장소 식별자 (백엔드 DB의 PK)")
     place_name : str = Field(description = "장소명. 임베딩하지 않고 메타데이터로만 저장한다")
     summary : str = Field(description = "장소 특징 요약. 이 값을 임베딩한다")
 
@@ -28,7 +28,7 @@ EmbedPlacesResponse = APIResponse[EmbedPlacesData]
 #요청 스키마
 class EmbedPlacesDeleteRequest(BaseModel):
     # 시트: 최대 100개. 없는 id 가 섞여도 에러가 아니다 — 서비스가 걸러낸다.
-    place_ids : list[str] = Field(max_length = 100, description = "삭제할 장소 식별자 목록")
+    place_ids : list[int] = Field(max_length = 100, description = "삭제할 장소 식별자 목록")
 
 
 #응답 스키마

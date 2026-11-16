@@ -2,7 +2,7 @@ from datetime import date as date_type
 from datetime import datetime as datetime_type
 from typing import Annotated, Literal, Optional
 
-from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
+from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Field
 
 from app.schemas.category import PlaceCategory
 from app.schemas.common import APIResponse, Coordinate
@@ -106,6 +106,16 @@ class ExtractDataLLM(BaseModel):
     slot: SlotsLLM
     query: str = Field(..., description="정성 조건 및 시간")
     bot_message: str = Field(..., description="사용자에게 보여줄 응답 문구")
+
+
+# 스트리밍(/v3/extract/stream) 전용. 필드는 같고 bot_message 가 맨 앞이다 — 모델은 앞에서부터
+# 쓰므로 문구가 먼저 나와야 첫 글자를 바로 보낼 수 있다(11/10 측정: GPU 문구 시작 p50 4.41초 → 0.62초,
+# 슬롯 정확도와 문구-슬롯 어긋남은 차이 없음). /v1 은 ExtractDataLLM 그대로 쓴다.
+class ExtractDataStreamLLM(BaseModel):
+    model_config = ConfigDict(title="ExtractDataLLM")
+    bot_message: str = Field(..., description="사용자에게 보여줄 응답 문구")
+    slot: SlotsLLM
+    query: str = Field(..., description="정성 조건 및 시간")
 
 
 ExtractResponse = APIResponse[ExtractData]

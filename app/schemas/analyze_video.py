@@ -12,7 +12,7 @@ class AnalyzeVideosRequest(BaseModel):
 
 
 #응답 스키마
-VideoStatus = Literal["success", "not_found", "failed"]
+VideoStatus = Literal["success", "not_found", "failed", "closed"]
 
 
 # 한 항목 = 장소 하나. 영상에 장소가 여러 곳이면 같은 video_url 로 여러 항목이
@@ -21,7 +21,7 @@ VideoStatus = Literal["success", "not_found", "failed"]
 # response_model_exclude_none 을 걸면 이 약속이 깨진다.
 class VideoAnalysisResult(BaseModel):
     video_url : str = Field(description = "요청에 들어온 url 그대로. 같은 영상의 장소끼리 묶는 키")
-    status : VideoStatus = Field(description = "success: 장소 확인 / not_found: 이 영상에서 확인한 장소가 없음(영상당 한 항목) / failed: 처리 오류, 영상 전체를 다시 요청(영상당 한 항목)")
+    status : VideoStatus = Field(description = "success: 장소 확인 / not_found: 이 영상에서 확인한 장소가 없음(영상당 한 항목) / failed: 처리 오류, 영상 전체를 다시 요청(영상당 한 항목) / closed: 검증은 됐지만 네이버 지역 검색에 없음(폐점), place_name·address 만 채움")
     error : Optional[ResponseMessage] = Field(default = None, description = "failed 일 때 원인 코드 (llm_timeout 등)")
     place_name : Optional[str] = Field(default = None, description = "검증된 장소명")
     address : Optional[str] = Field(default = None, description = "도로명 주소")
